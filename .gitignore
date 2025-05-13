@@ -1,1 +1,6 @@
 *.html
+.Rproj.user
+*.Rproj
+
+modules/*_cache/
+modules/*_files/
