@@ -1,0 +1,321 @@
+---
+title: Analyzing data for racial equity
+date: January 17, 2024
+output: 
+  html_document:
+    code_folding: show
+    df_print: "paged"
+urlcolor: blue
+---
+
+# Analyzing data for racial equity
+
+```{r, config, echo=FALSE}
+library(knitr)
+
+knitr::opts_chunk$set(message = FALSE,
+                      echo = FALSE,
+                      tidy.opts = list(width.cutoff = 60),
+                      tidy = TRUE)
+options(scipen = 999,
+        digits = 2,
+        tigris_use_cache = TRUE) # Cache Census geographies to avoid repeat downloads
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",")
+})
+```
+
+```{r packages}
+library(here)
+library(ggplot2)
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(patchwork)
+library(dots)
+
+tidycensus::census_api_key("ce143e4c445f1ccaed3aa214715bebcb9a487cfa")
+```
+
+We are going to go through an exercise of using census data to get
+start to understand racial and ethnic disparities in environmental
+harms. The module will both give you some concrete recipes for
+calculating measure of disparate impact, and give you an opportunity
+to sharpen your analysis.
+
+As of 2024, [California had 220 failing drinking water systems serving
+nearly half a million
+people](https://calmatters.org/environment/water/2024/09/california-drinking-water-contamination/). One
+of these is Lamont, which the Water Board has awarded $25 million to
+help fix their water system which included three wells that have
+levels of arsenic and 1,2,3-trichloropropane higher than California's
+Maximum Contaminant Level.
+
+Who was exposed to water from this system, and are there racial
+disparities? One way tha we could look at that is, within the city of
+Lamont, who actually used the public water system and who used their
+own wells, so let's start there.
+
+In the 1990 decennial census, the US Census Bureau asked respondents
+about the source of the drinking water. The question hasn't been asked
+since, but in 2024 year the [US EPA attempt to predict the probability
+that residents within a census block were using water from a public
+utility or private
+well](https://github.com/USEPA/ORD_Water_Source_2020/tree/5e717b36419251bec97d8795a2e08308f9a7faef
+). Their model used the 1990 data, administrative data on well
+permitting, and other measures. It's not perfect, but it's a good
+place to start.\footnote{We are not using the most recent version of
+their data because they recently adjusted their model so that if a
+census block is within a utility's service area they automatically
+assume it gets water from the utility, and we are exactly interested
+in when that doesn't happen.}
+
+We are going to bring that data together with data on race and
+ethnicity from the 2020 decennial census which reports data down to
+the census block level. If we wanted data on other demographic
+characteristics we would probably need to use the the American
+Community Survey, which only reports data down to the blockgroup
+level, but race and ethnicity data is one of the handful of variables
+that is in the decennial census .
+
+```{r race_ethnicity_by_block, cache=TRUE}
+STATE <- "CA"
+COUNTY <- "Kern"
+CITY <- "Lamont"
+
+racevars <- c(
+  White = "P2_005N",
+  Black = "P2_006N",
+  AmericanIndian = "P2_007N",
+  Asian = "P2_008N",
+  HawaiianPacificIslander = "P2_009N",
+  Other = "P2_010N",
+  TwoOrMoreRaces = "P2_011N",
+  Hispanic = "P2_002N"
+)
+
+# Retrieve race/ethnicity counts by tract, include geospatial data (geometry = TRUE)
+# and summary value (summary_var) with each record, and calculate percent
+#
+# See basic usage: https://walker-data.com/tidycensus/articles/basic-usage.html
+# See available geographies: https://walker-data.com/tidycensus/articles/basic-usage.html#geography-in-tidycensus
+
+# Get all counties in which Stockton, CA resides
+# Then flatten them, so that there is one record for each block
+county_blocks <- get_decennial(year = 2020,
+                               sumfile = "pl",
+                               variables = racevars,
+                               geography = "block",
+                               state = STATE,
+                               county = COUNTY,
+                               geometry = TRUE,
+                               summary_var = "P2_001N" ) %>%
+  mutate(percent = 100 * (value / summary_value)) %>%
+  pivot_wider(names_from = variable,
+              values_from = c(value, percent))
+
+city_boundary <- tigris::places(state = STATE, cb = TRUE) %>%
+  dplyr::filter(NAME == CITY)
+
+city_blocks <- st_filter(county_blocks, city_boundary)
+```
+
+```{r water_source_data, cache=TRUE}
+well_data_file <- "./data/well_blocks.csv"
+if (!file.exists(well_data_file)) {
+  res <- download.file("https://media.githubusercontent.com/media/USEPA/ORD_Water_Source_2020/5e717b36419251bec97d8795a2e08308f9a7faef/outputs/Well_Estimates_2020_Blks.csv?download=true",
+                       destfile=well_data_file,
+                       method="curl")
+}
+
+water_sources <- read_tsv(well_data_file)
+```
+
+```{r census_with_water_sources, cache=TRUE}
+city_blocks_with_water_sources <- merge(city_blocks,
+                                        water_sources,
+                                        by.x = "GEOID",
+                                        by.y = "GEOID_Blk",
+                                        all.x = TRUE)
+```
+
+## Lamont Public Water Probability
+
+Let's start by looking at where in Lamont people get their water from
+the utility. The core of the town seems to be well served by the
+utility and the margins of the municipality are more likely to have
+wells (Figure 1).
+
+```{r census_blocks_with_water_sources_map, cache=TRUE, fig.cap="Probability of Public Water"}
+ggplot() +
+  geom_sf(city_blocks_with_water_sources,
+          mapping = aes(geometry = geometry,
+                        fill = Prob_Pub),
+                        color = NA) +
+  scale_fill_distiller(palette = "OrRd", direction = 1, labels = scales::percent) +
+  labs(fill = "Probability of Public Water") +
+  theme(axis.ticks = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+```
+
+## Racial and Ethnic population distribution
+
+Next, let's look at where people of different race and ethnicities
+live in Lamont. We can see that the town in mainly Latine, and they
+are heavily concentrated in the core of the city. White people are
+more evenly dispersed (Figure 2). So, it looks likely that Latines are
+more likely to be exposed to the public utility's drinking water.
+
+```{r race_dots}
+race_dots <- dots::dots_points(shp = city_blocks_with_water_sources,
+                               cols = c(value_Hispanic,
+                                        value_White,
+                                        value_Black),
+                               divisor = 10)  %>% 
+  mutate(dots_type = case_when(dots_type == "value_Hispanic" ~ "Hispanic",
+                               dots_type == "value_White" ~ "White",
+                               dots_type == "value_Black" ~ "Black"))
+```
+
+```{r dot_density, fig.cap="Dot density plot of racial and ethnic distribution. One dot = 10 people"}
+ggplot() +
+  geom_sf(data = city_blocks_with_water_sources,
+          fill = "grey", color = NA) +
+  geom_sf(data = race_dots, size = 0.1) +
+  facet_wrap(~ dots_type) +
+  theme(legend.position = "none",
+        axis.ticks = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+```
+
+## Exposure estimates
+Finally, let's directly estimate the number and proportion of people
+in the different racial using the utility's water. We can see a large
+difference in the proportion of Latines using the utility versus the
+proportion of white people.
+
+```{r weighted_averages}
+demo_summary <- city_blocks_with_water_sources %>%
+  summarize(
+    prop_white = weighted.mean(Prob_Pub, w = value_White, na.rm = TRUE),
+    prop_black = weighted.mean(Prob_Pub, w = value_Black, na.rm = TRUE),
+    prop_hispanic = weighted.mean(Prob_Pub, w = value_Hispanic, na.rm = TRUE),
+    pp_white = sum(Prob_Pub * value_White, na.rm = TRUE),
+    pp_black = sum(Prob_Pub * value_Black, na.rm = TRUE),
+    pp_hispanic = sum(value_Hispanic, na.rm = TRUE),
+    white = sum(value_White, na.rm = TRUE),
+    black = sum(value_Black, na.rm = TRUE),
+    hispanic = sum(value_Hispanic, na.rm = TRUE)
+
+  )
+```
+
+Weighted averages for the probability a group of people in Franklin county are connected
+to a public water system by block are as follows:
+
+| Race / Ethnicity | Total | Using Public Water | Percentage |
+|------------------|----------------------|--------------------------|------------------------------|
+| White | `r demo_summary$white` | `r demo_summary$pp_white` | `r demo_summary$prop_white * 100`% |
+| Black | `r demo_summary$black` | `r demo_summary$pp_black` | `r demo_summary$prop_black * 100`% |
+| Hispanic | `r demo_summary$hispanic` | `r demo_summary$pp_hispanic` | `r demo_summary$prop_hispanic * 100`% |
+
+## Assumptions
+
+We are going to share the RMarkdown notebook that we used for this
+analysis and we can go through the technical details of that another
+time, but for now, let's stay high level.
+
+What are some of the assumptions that we've made in this analysis,
+either explictly and implictly that could pose a problem?
+
+Take 5 minutes, and everyone think about two assumptions that this
+analysis has made, how that could be a problem for the analysis, and
+how you could test the analysis. We'll get back together and make a
+list and think through a few of them together.
+
+<!--
+If the people are struggling, here are some assumptions:
+
+1. the data from the US EPA is good
+2. the data from the Census is good
+3. that census data from 2020 is still reflective of current conditions
+4. that private well water actually is better in Lamont than the public water system
+-->
+
+## Potential Causes
+
+When we are doing an racial equity analysis, we are interested in data about racial
+and ethnic disparities for two reasons. 
+
+One, if there are racial and ethnic differences in exposure to harms
+and access to good things that is a good sign of injustice.
+
+Two, it can be a clue to the cause or mechanism of the disparity. We
+should be interested in the causes and mechanisms for a couple of reasons:
+
+First, understanding the mechanism can help us figure out
+interventions that can actually address injustice.
+
+Second, if we understand the mechanism in a particular place, we can
+then use that knowledge to find places where there is likely racial
+injustice caused by the same mechanism.
+
+So, in Lamont, in the immediate problem with the water is that is has high
+levels of arsenic and 1,2,3-trichloropropane. Why does it have elevated levels?
+
+Read this [press release on the Water Board's
+funding](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf)
+to support the water utility and write down three things that could
+have helped caused this problem. Then we will discuss together. Take
+10 minutes. And we'll discuss them together.
+
+```
+Instructor Notes
+Some potential factors
+1. Agricultural
+2. Large number of agricultural workers with weak political power
+3. Size of the utility
+```
+
+### Sharpening Analysis
+We've identified some potential causes. How would we push on these to
+see if they actually were important in this case?
+
+1. Talk to people in Lamont?
+2. Read about arsenic and 1,2,3-trichloropropane and their common sources as polluntants.
+3. What else?
+
+### Finding other Cases
+Alright, now this is the last thing for this module, let's take one of these potential
+causes and start to develop a data analysis plan that might help us find other places
+that have the same problem.
+
+We will identify the type of data we need and the expected
+relationship we should see if this mechanism is working in other
+places.
+
+Once we have a plan, we'll put do some of the analysis and we will dicuss what
+we find together the next time we meet.
+
+```
+Instructor Notes
+For example, if these pollutants are associtated with agriculture we might want to
+see how many of the failng utilities are in primarily agricultural counties.
+
+How would you characterize a county as primarily agricultural. Maybe percentage of
+land use that is used for crops, which the USDA has.
+```
+
+If we can do homework, please put together a proposal for a data analysis for 
+a different potential cause of the problems in Lamont. Describe what you think
+the mechanism is, the data you would need to see if that was happening other places,
+and the relationship in the data you would expect to see.
+
+
+
+
+
+
+
