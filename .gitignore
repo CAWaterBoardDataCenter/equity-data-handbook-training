@@ -1,6 +1,7 @@
 *.html
 .Rproj.user
 *.Rproj
+*.Rhistory
 
 modules/*_cache/
 modules/*_files/
