@@ -520,7 +520,7 @@ county are connected to a public water system by block
 | Hispanic | `r demo_summary$hispanic` | `r demo_summary$pp_hispanic` | `r demo_summary$prop_hispanic * 100`% |
 | Tribal | `r demo_summary$tribal` | `r demo_summary$pp_tribal` | `r demo_summary$prop_tribal * 100`% |
 
-## Sharpening analysis
+# Next steps
 
 -   Talk to people in Lamont?
 -   Read about arsenic and 1,2,3-trichloropropane and their common
@@ -533,6 +533,7 @@ Planning](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-pre
 :::
 
 ::: notes
-8-10 minute breakout room (6 rooms, 5/room), 5-10 minute share
+- Let's sharpen this analysis
+- 8-10 minute breakout room (6 rooms, 5/room), 5-10 minute share
 out/discussion round robin, 2 ideas from each group
 :::
