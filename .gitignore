@@ -2,6 +2,9 @@
 .Rproj.user
 *.Rproj
 *.Rhistory
+.RData
 
 modules/*_cache/
 modules/*_files/
+
+data/

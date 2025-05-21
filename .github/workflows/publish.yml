@@ -1,52 +1,51 @@
-name: Build and Deploy to GitHub Pages
+name: Build and Deploy Multiple Quarto Slides
 
 on:
   push:
-    branches: [main] # Change if you use a different default branch
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout source code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build site
-        run: make
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
 
-      - name: Upload site artifact
-        uses: actions/upload-artifact@v4
+      - name: Setup dependencies
+        run: quarto check install --quiet
+
+      - name: Render all slide decks in modules/
+        run: |
+          quarto render modules
+
+      - name: Upload site as artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: site-dist
-          path: ./dist # Change to your actual build output directory
+          path: ./_site  # where Quarto outputs HTML
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
 
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Download site artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: site-dist
-          path: ./site
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./site
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

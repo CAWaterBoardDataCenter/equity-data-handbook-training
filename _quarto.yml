@@ -1,0 +1,27 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Analyzing Data for Racial Equity"
+  navbar:
+    left:
+      - text: "Home"
+        href: index.qmd
+      - text: "Module One: Identifying Injustice"
+        href: modules/identifying-injustice/
+      - text: "Module Two: Interrogating Mechanism"
+        href: modules/interrogating-mechanism/
+  sidebar:
+    style: "floating"
+    contents:
+      - section: "Modules"
+        modules:
+          - modules/identify-injustice.qmd
+          - modules/interrogating-mechanism.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    self-contained: true
