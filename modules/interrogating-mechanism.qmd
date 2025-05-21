@@ -1,0 +1,23 @@
+## Exercise: Failing Water System in Lamont
+
+::: columns
+::: {.column width="50%"}
+As of 2024, California had 220 failing drinking water systems serving
+nearly half a million people.
+
+One of them, Lamont, has received \$25 million in Water Board funding to
+help fix their water system, which included three wells exceeding the Maximum
+Contaminant Level of arsenic and 1,2,3-tricholoropropane.
+
+In Kern County, where Lamont is located, 14 other projects consolidating more than 50
+systems, including two schools, are currently being developed through SAFER. Since it
+was launched in July 2019, the program has invested over $65 million in the county for
+a variety of drinking water projects that will ultimately benefit 212,000 people. Statewide,
+95 consolidations have been completed, providing 78,000 people with safe drinking
+water.
+:::
+
+::: {.column width="50%"}
+![](assets/kern_county_ca.png)
+:::
+:::
