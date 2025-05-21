@@ -28,9 +28,12 @@ jobs:
       - name: Setup dependencies
         run: quarto check install --quiet
 
-      - name: Render all slide decks in modules/
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Render all Quarto documents
         run: |
-          quarto render modules
+          quarto render
 
       - name: Upload site as artifact
         uses: actions/upload-pages-artifact@v3
