@@ -7,6 +7,7 @@ load.lib <- c(
   "patchwork",
   "sf",
   "knitr",
+  "rmarkdown",
   "formatR",
   "dots"
 )
