@@ -7,6 +7,6 @@
 modules/*_cache/
 modules/*_files/
 
-data/
+data/raw/well_blocks.csv
 /.quarto/
 /_site/
