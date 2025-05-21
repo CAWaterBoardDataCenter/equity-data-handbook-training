@@ -8,3 +8,5 @@ modules/*_cache/
 modules/*_files/
 
 data/
+/.quarto/
+/_site/

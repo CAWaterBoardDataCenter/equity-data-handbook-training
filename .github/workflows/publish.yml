@@ -22,18 +22,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
-
-      - name: Setup Quarto dependencies
-        run: quarto check install --quiet
-
-      - name: Setup R
-        uses: r-lib/actions/setup-r@v2
-
       - name: Build Quarto site
         run: |
-          make
+          docker compose run build
 
       - name: Upload site as artifact
         uses: actions/upload-pages-artifact@v3
