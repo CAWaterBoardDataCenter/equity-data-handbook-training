@@ -7,21 +7,14 @@ website:
   navbar:
     left:
       - text: "Home"
-        href: index.qmd
+        href: index
       - text: "Module One: Identifying Injustice"
-        href: modules/identifying-injustice/
+        href: modules/identifying-injustice
       - text: "Module Two: Interrogating Mechanism"
-        href: modules/interrogating-mechanism/
-  sidebar:
-    style: "floating"
-    contents:
-      - section: "Modules"
-        modules:
-          - modules/identify-injustice.qmd
-          - modules/interrogating-mechanism.qmd
+        href: modules/interrogating-mechanism
 
 format:
   html:
-    theme: cosmo
-    toc: true
+    theme: litera
+    toc: false
     self-contained: true

@@ -8,14 +8,16 @@ page-layout: full
 
 This site contains a collection of presentations built with [Quarto](https://quarto.org/). Use the navigation above or the links below to explore:
 
-## 📚 Slides
+Looking to reuse or adapt this content? Check out the [GitHub repo](https://github.com/CAWaterBoardDataCenter/equity-data-handbook-training).
 
-- [Module One: Identifying Injustice](modules/identifying-injustice/)
-- [Module Two: Interrogating Mechanism](modules/interrogating-mechanism/)
+Happy exploring!
 
----
+## 📽️ Slides
 
-## Additional resources for statistical analysis
+- [Module One: Identifying Injustice](modules/identifying-injustice)
+- [Module Two: Interrogating Mechanism](modules/interrogating-mechanism)
+
+## 📚 Additional resources for statistical analysis
 
 - https://cawaterboarddatacenter.github.io/equity-data-handbook/resources.html
 
@@ -33,9 +35,3 @@ This site contains a collection of presentations built with [Quarto](https://qua
 - Chapter 12. Comparing Groups: https://bookdown.org/daniel_dauber_io/r4np_book/comparing-groups.html
 - Analyzing US Census Data: https://walker-data.com/census-r/index.html
 - Statistics Knowledge Portal: https://www.jmp.com/en_us/statistics-knowledge-portal.html 
-
----
-
-Looking to reuse or adapt this content? Check out the [GitHub repo](https://github.com/YOUR-USERNAME/YOUR-REPO).
-
-Happy exploring!
