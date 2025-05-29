@@ -1,23 +1,198 @@
-## Exercise: Failing Water System in Lamont
+---
+title: "Analyzing Data for Racial Equity"
+subtitle: "Module 2: Interrogating Mechanism"
+format:
+  revealjs:
+    smaller: true
+    scrollable: true
+    code-copy: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r packages, echo = FALSE}
+library(here)
+library(ggplot2)
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(patchwork)
+library(dots)
+
+tidycensus::census_api_key("ce143e4c445f1ccaed3aa214715bebcb9a487cfa")
+```
+
+```{r config, echo=FALSE}
+library(knitr)
+
+knitr::opts_chunk$set(message = FALSE,
+                      tidy.opts = list(width.cutoff = 60),
+                      tidy = TRUE)
+options(scipen = 999,
+        digits = 2,
+        tigris_use_cache = TRUE) # Cache Census geographies to avoid repeat downloads
+
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",")
+})
+```
+
+## Module 1: Identifying Injustice Recap
+
+- Racial equity is a **practice**, not a target
+- Racial inequity is a **difference**, or disparity, in quality of service or access to resources
+- Disparities can represent **injustice**
+- Identifying the **mechanism** of injustice helps us:
+  - Contemplate effective interventions
+  - Identify other places affected by the same mechanism
+  
+::: footer
+🔗 [Racial Equity - California State Water Resources Control
+Board](https://www.waterboards.ca.gov/racial_equity/)
+
+📖 [Equity Data Handbook - Planning - Describe the selected program,
+policy, or process, and populations affected by
+it](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-prep/plan.html)
+:::
+
+## Module 1: Identifying Injustice Recap
+
+- **Root cause analysis** is a framework for identifying the core mechanism of injustice
+
+![](assets/rca_template.png)
+
+::: footer
+📖 [Equity Data Handbook - Evaluation - Root Cause
+Analysis](https://cawaterboarddatacenter.github.io/equity-data-handbook/eval.html#root-cause-analysis)
+:::
+
+## Exercise: Failing water system in Lamont
 
 ::: columns
 ::: {.column width="50%"}
 As of 2024, California had 220 failing drinking water systems serving
 nearly half a million people.
 
-One of them, Lamont, has received \$25 million in Water Board funding to
-help fix their water system, which included three wells exceeding the Maximum
+Lamont has received \$25 million in Water Board funding to help fix their failing
+drinking water system, which included three wells exceeding the Maximum
 Contaminant Level of arsenic and 1,2,3-tricholoropropane.
-
-In Kern County, where Lamont is located, 14 other projects consolidating more than 50
-systems, including two schools, are currently being developed through SAFER. Since it
-was launched in July 2019, the program has invested over $65 million in the county for
-a variety of drinking water projects that will ultimately benefit 212,000 people. Statewide,
-95 consolidations have been completed, providing 78,000 people with safe drinking
-water.
 :::
 
 ::: {.column width="50%"}
 ![](assets/kern_county_ca.png)
 :::
 :::
+
+::: footer
+🔗 [Water Board grants Lamont District $25.4 million to secure safe drinking water for 20,000 residents](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf)
+:::
+
+## Exercise: Failing water system in Lamont
+
+[ Map from Module 1 showing Hispanic and Tribal populations are disproportionately exposed to contaminated public water ]
+
+## Exercise: Failing water system in Lamont
+
+[ Table from Module 1 showing Hispanic and Tribal populations are disproportionately exposed to contaminated public water ]
+
+## Further interrogating the failing water system in Lamont
+
+We know that people living in the **city center** are more likely to use public water,
+and that in Lamont, those people are more likely to be **Hispanic** or of **Tribal** origin.
+
+We also know that mitigation effort in Lamont included the destruction of **three 45-year-old wells**
+that exceeded the state Maximum Contaminant Levels (MCL) for **arsenic** and 
+**1,2,3-trichloropropane**.
+
+## Further interrogating the failing water system in Lamont
+
+Take 10 minutes to think about the root causes of contaminated water and exposure to it.
+
+- Why do people live where they live?
+- How did contaminants get into the water?
+- What hadn't contaminants been removed from the water?
+
+Use [this press release](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf)
+for additional context.
+
+## Further interrogating the failing water system in Lamont
+
+- Why do people live where they live?
+  - Redlining
+  - Tribal lands
+  - Proximity to work
+- How did contaminants get into the water?
+  - Age of wells
+  - Concentration of agricultural activity
+- What hadn't contaminants been removed from the water?
+  - Permitting
+  - Limited resources
+  
+::: notes
+Public water wells, like all wells, have a limited lifespan, typically ranging from 20 to 50 years. However, this lifespan can vary depending on factors like the aquifer's stability, the well's design, and the frequency of use. Some wells can last much longer, even hundreds of years, while others may require replacement much sooner.
+
+Releases to groundwater may have occurred as a result of the chemical leaching through soil at waste sites and agricultural soil treated with fumigants that contain the chemical.
+:::
+
+## Scaling intervention
+
+Let’s take one of these potential mechanisms and start to develop a data analysis plan that might help us find other places that have the same problem.
+
+We will identify the type of data we need and the expected relationship we should see if this mechanism is working in other places.
+
+For example, if these pollutants are associated with agriculture we might want to see how many of the failing utilities are in primarily agricultural counties.
+
+::: notes
+In Kern County, where Lamont is located, 14 other projects consolidating more than 50
+systems, including two schools, are currently being developed through SAFER. Since it
+was launched in July 2019, the program has invested over $65 million in the county for
+a variety of drinking water projects that will ultimately benefit 212,000 people. Statewide,
+95 consolidations have been completed, providing 78,000 people with safe drinking
+water.
+
+15% of SAFER-funded consolidation projects statewide are located in Kern County
+:::
+
+## Agricultural activity
+
+[ Map agricultural activity / pesticide use? ]
+
+::: notes
+CalEnviroScreen has layer on agricultural pesticides: https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides 
+https://calpip.cdpr.ca.gov/infodocs.cfm?page=navigate#navpur 
+Others? EPA? USDA? 
+:::
+
+## Failing water systems
+
+[ Map failing water systems]
+
+## SAFER funding
+
+[ Map SAFER funding ]
+
+## Putting it all together
+
+[ Overlay agriculture, failing water systems, SAFER funding ]
+
+## Putting it all together
+
+- What is our approach?
+  - Augment SAFER investments or fill the gaps?
+- What do we have the authority to do?
+- What cause/s can we address?
+- What partners do we need to find that are outside of that scope?
+
+::: notes
+Gaps: Concentration of agricultural activity w/o high level of SAFER funding
+:::
+
+## Putting it all together
+
+Once you've identified your candidate water systems, repeat the original analysis
+with your reproducible code!
+
+- May find a dozen places that “look” the same as Lamont
+- Prioritize places where you see disparity
+- Interrogate the problem and intervene where the same mechanism is at play

@@ -230,6 +230,7 @@ and via web browser
 ```{r race_ethnicity_by_block, cache=TRUE}
 #| echo: true
 #| code-line-numbers: "1-7|9-14|16-19"
+#| results: false
 
 STATE <- "CA"
 COUNTY <- "Kern"
