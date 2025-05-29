@@ -40,13 +40,15 @@ knitr::knit_hooks$set(inline = function(x) {
 
 ## Module 1: Identifying Injustice Recap
 
+::: incremental
 - Racial equity is a **practice**, not a target
 - Racial inequity is a **difference**, or disparity, in quality of service or access to resources
 - Disparities can represent **injustice**
 - Identifying the **mechanism** of injustice helps us:
   - Contemplate effective interventions
   - Identify other places affected by the same mechanism
-  
+:::  
+
 ::: footer
 🔗 [Racial Equity - California State Water Resources Control
 Board](https://www.waterboards.ca.gov/racial_equity/)
@@ -58,7 +60,7 @@ it](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-prep/plan
 
 ## Module 1: Identifying Injustice Recap
 
-- **Root cause analysis** is a framework for identifying the core mechanism of injustice
+**Root cause analysis** is a framework for identifying the core mechanism of injustice
 
 ![](assets/rca_template.png)
 
@@ -118,6 +120,7 @@ for additional context.
 
 ## Further interrogating the failing water system in Lamont
 
+::: incremental
 - Why do people live where they live?
   - Redlining
   - Tribal lands
@@ -128,6 +131,7 @@ for additional context.
 - What hadn't contaminants been removed from the water?
   - Permitting
   - Limited resources
+:::  
   
 ::: notes
 Public water wells, like all wells, have a limited lifespan, typically ranging from 20 to 50 years. However, this lifespan can vary depending on factors like the aquifer's stability, the well's design, and the frequency of use. Some wells can last much longer, even hundreds of years, while others may require replacement much sooner.
@@ -202,11 +206,13 @@ Others? EPA? USDA?
 
 ## Putting it all together
 
+::: incremental
 - What is our approach?
   - Augment SAFER investments or fill the gaps?
 - What do we have the authority to do?
 - What cause/s can we address?
 - What partners do we need to find that are outside of that scope?
+:::
 
 ::: notes
 Gaps: Concentration of agricultural activity w/o high level of SAFER funding
@@ -217,6 +223,8 @@ Gaps: Concentration of agricultural activity w/o high level of SAFER funding
 Once you've identified your candidate water systems, repeat the original analysis
 with your reproducible code!
 
+::: incremental
 - May find a dozen places that “look” the same as Lamont
 - Prioritize places where you see disparity
 - Interrogate the problem and intervene where the same mechanism is at play
+:::
