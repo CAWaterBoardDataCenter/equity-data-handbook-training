@@ -154,12 +154,36 @@ water.
 15% of SAFER-funded consolidation projects statewide are located in Kern County
 :::
 
+## Reproducible data analysis
+
+Welcome back to the tidyverse!
+
+::: incremental
+- `tidyr`
+  - **tidyr::pivot_longer() / tidyverse::pivot_wider()** – Make wide data long, and long data wide, respectively
+- `ggplot2`
+  - **ggplot2::ggplot()** - Create plot from data
+  - **ggplot2::geom_sf()** - Add geographic layer to plot
+  - **ggplot2::facet_wrap()** - Create plots for each group value
+:::
+
+::: footer
+🔗 [`tidyr` documentation](https://tidyr.tidyverse.org/index.html)
+
+🔗 [`ggplot2` documentation](https://ggplot2.tidyverse.org/)
+:::
+
 ## Agricultural activity
 
-[ Map agricultural activity / pesticide use? ]
+- Map pesticide use: https://oehha.ca.gov/calenviroscreen/download-data
+
+::: footer
+🔗 [Tribal Water Data Map - Layer Guide - CalEnviroScreen - Agricultural Pesticides](https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides)
+:::
 
 ::: notes
-CalEnviroScreen has layer on agricultural pesticides: https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides 
+Cropland via USDA: https://croplandcros.scinet.usda.gov/
+https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides 
 https://calpip.cdpr.ca.gov/infodocs.cfm?page=navigate#navpur 
 Others? EPA? USDA? 
 :::
