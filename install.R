@@ -9,7 +9,8 @@ load.lib <- c(
   "knitr",
   "rmarkdown",
   "formatR",
-  "dots"
+  "dots",
+  "ggnewscale",
 )
 install.lib <- load.lib[!load.lib %in% installed.packages()]
 for (lib in install.lib) {
