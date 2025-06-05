@@ -10,7 +10,7 @@ load.lib <- c(
   "rmarkdown",
   "formatR",
   "dots",
-  "ggnewscale",
+  "ggnewscale"
 )
 install.lib <- load.lib[!load.lib %in% installed.packages()]
 for (lib in install.lib) {
