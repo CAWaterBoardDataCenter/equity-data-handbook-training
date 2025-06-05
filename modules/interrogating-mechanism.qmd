@@ -14,6 +14,7 @@ editor:
 ```{r packages, echo = FALSE}
 library(here)
 library(ggplot2)
+library(ggnewscale)
 library(tidyverse)
 library(tidycensus)
 library(sf)
@@ -21,6 +22,7 @@ library(patchwork)
 library(dots)
 
 tidycensus::census_api_key("ce143e4c445f1ccaed3aa214715bebcb9a487cfa")
+sf::sf_use_s2(FALSE)
 ```
 
 ```{r config, echo=FALSE}
@@ -28,7 +30,9 @@ library(knitr)
 
 knitr::opts_chunk$set(message = FALSE,
                       tidy.opts = list(width.cutoff = 60),
-                      tidy = TRUE)
+                      tidy = TRUE,
+                      cache = TRUE)
+
 options(scipen = 999,
         digits = 2,
         tigris_use_cache = TRUE) # Cache Census geographies to avoid repeat downloads
@@ -50,8 +54,8 @@ knitr::knit_hooks$set(inline = function(x) {
 :::  
 
 ::: footer
-🔗 [Racial Equity - California State Water Resources Control
-Board](https://www.waterboards.ca.gov/racial_equity/)
+🔗 [California State Water Resources Control
+Board - Racial Equity](https://www.waterboards.ca.gov/racial_equity/)
 
 📖 [Equity Data Handbook - Planning - Describe the selected program,
 policy, or process, and populations affected by
@@ -69,7 +73,7 @@ it](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-prep/plan
 Analysis](https://cawaterboarddatacenter.github.io/equity-data-handbook/eval.html#root-cause-analysis)
 :::
 
-## Exercise: Failing water system in Lamont
+## Module 1: Identifying Injustice Recap
 
 ::: columns
 ::: {.column width="50%"}
@@ -90,141 +94,303 @@ Contaminant Level of arsenic and 1,2,3-tricholoropropane.
 🔗 [Water Board grants Lamont District $25.4 million to secure safe drinking water for 20,000 residents](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf)
 :::
 
-## Exercise: Failing water system in Lamont
+## Module 1: Identifying Injustice Recap
 
-[ Map from Module 1 showing Hispanic and Tribal populations are disproportionately exposed to contaminated public water ]
-
-## Exercise: Failing water system in Lamont
-
-[ Table from Module 1 showing Hispanic and Tribal populations are disproportionately exposed to contaminated public water ]
-
-## Further interrogating the failing water system in Lamont
-
-We know that people living in the **city center** are more likely to use public water,
+We found that people living in the **city center** are more likely to use public water,
 and that in Lamont, those people are more likely to be **Hispanic** or of **Tribal** origin.
 
-We also know that mitigation effort in Lamont included the destruction of **three 45-year-old wells**
+We also know from the linked press release that mitigation efforts in Lamont included the destruction of **three 45-year-old wells**
 that exceeded the state Maximum Contaminant Levels (MCL) for **arsenic** and 
 **1,2,3-trichloropropane**.
 
-## Further interrogating the failing water system in Lamont
+::: footer
+🔗 [Water Board grants Lamont District $25.4 million to secure safe drinking water for 20,000 residents](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf)
 
-Take 10 minutes to think about the root causes of contaminated water and exposure to it.
+🔗 [California State Water Resources Control Board - 1,2,3,-Trichloropropane (1,2,3 - TCP) - Background](https://waterboards.ca.gov/drinking_water/certlic/drinkingwater/123TCP.html)
+:::
 
-- Why do people live where they live?
+## What are the root causes of contamination and exposure to it?
+
+Take **10 minutes** to discuss the root causes of contaminated water and exposure to it. Some questions to consider include:
+
+- How are people exposed to the contaminated water?
 - How did contaminants get into the water?
 - What hadn't contaminants been removed from the water?
 
-Use [this press release](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf)
-for additional context.
+Use [this press release](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf) for extra context, if needed.
 
-## Further interrogating the failing water system in Lamont
+**One person from each group will share a summary of their group's discussion when we reconvene.**
+
+## How are people exposed to the contaminated water?
 
 ::: incremental
+- Public water use, which as we learned, is a function of where you live
 - Why do people live where they live?
   - Redlining
   - Tribal lands
   - Proximity to work
-- How did contaminants get into the water?
-  - Age of wells
-  - Concentration of agricultural activity
-- What hadn't contaminants been removed from the water?
-  - Permitting
-  - Limited resources
-:::  
-  
-::: notes
-Public water wells, like all wells, have a limited lifespan, typically ranging from 20 to 50 years. However, this lifespan can vary depending on factors like the aquifer's stability, the well's design, and the frequency of use. Some wells can last much longer, even hundreds of years, while others may require replacement much sooner.
-
-Releases to groundwater may have occurred as a result of the chemical leaching through soil at waste sites and agricultural soil treated with fumigants that contain the chemical.
 :::
 
-## Scaling intervention
-
-Let’s take one of these potential mechanisms and start to develop a data analysis plan that might help us find other places that have the same problem.
-
-We will identify the type of data we need and the expected relationship we should see if this mechanism is working in other places.
-
-For example, if these pollutants are associated with agriculture we might want to see how many of the failing utilities are in primarily agricultural counties.
-
 ::: notes
-In Kern County, where Lamont is located, 14 other projects consolidating more than 50
-systems, including two schools, are currently being developed through SAFER. Since it
-was launched in July 2019, the program has invested over $65 million in the county for
-a variety of drinking water projects that will ultimately benefit 212,000 people. Statewide,
-95 consolidations have been completed, providing 78,000 people with safe drinking
-water.
-
-15% of SAFER-funded consolidation projects statewide are located in Kern County
+An important factor, but not one within the Water Boards remit
 :::
 
-## Reproducible data analysis
-
-Welcome back to the tidyverse!
+## How did contaminants get into the water?
 
 ::: incremental
-- `tidyr`
-  - **tidyr::pivot_longer() / tidyverse::pivot_wider()** – Make wide data long, and long data wide, respectively
-- `ggplot2`
-  - **ggplot2::ggplot()** - Create plot from data
-  - **ggplot2::geom_sf()** - Add geographic layer to plot
-  - **ggplot2::facet_wrap()** - Create plots for each group value
+- Age of wells
+- Concentration of agricultural activity
 :::
 
-::: footer
-🔗 [`tidyr` documentation](https://tidyr.tidyverse.org/index.html)
-
-🔗 [`ggplot2` documentation](https://ggplot2.tidyverse.org/)
+::: notes
+- Public water wells typically have a lifespan of 20 to 50 years
+- Chemical reactions of common pesticides may produce of 1,2,3-trichloropropane
 :::
 
-## Agricultural activity
+## Why hadn't contaminants been removed from the water?
 
-- Map pesticide use: https://oehha.ca.gov/calenviroscreen/download-data
+::: incremental
+- Permitting
+- Cooperation
+- Limited resources
+::: 
+
+::: notes
+Resources = SAFER lever!
+:::
+  
+# Scaling intervention
+
+## Where else is the mechanism at play?
+
+SAFER has funded **15** water system consolidation projects in Kern County, where Lamont is located. That's about **16 percent** of SAFER-funded consolidations statewide. 
+
+**Is there a common factor affecting water systems in Kern County that might also affect water systems in other counties?**
+
+Let's focus on one of the mechanisms we suspect led to contamination: **agricultural activity.** If we can identify other places where agricultural activity occurs, then we might find other places where the water is contaminated.
+
+## What data might help us understand the relationship between agriculture and water system health?
+
+🛎️ Chime in out loud or in the chat
+
+::: notes
+- Land use
+- Pesticide use
+- Water system status (SAFER)
+:::
+
+## Pesticide use
+
+1. Retrieve CalEnviroScreen data
+
+Why CES? 
+
+- Pesticide use is a proven vector of contamination
+- CalEnviroScreen does a lot of processing for us ❤️
 
 ::: footer
 🔗 [Tribal Water Data Map - Layer Guide - CalEnviroScreen - Agricultural Pesticides](https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides)
+
+🔗 [CalEnviroScreen - Download Data](https://oehha.ca.gov/calenviroscreen/download-data)
 :::
 
 ::: notes
-Cropland via USDA: https://croplandcros.scinet.usda.gov/
+Some other potential data sources:
+- Cropland via USDA: https://croplandcros.scinet.usda.gov/
 https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides 
-https://calpip.cdpr.ca.gov/infodocs.cfm?page=navigate#navpur 
-Others? EPA? USDA? 
+- https://calpip.cdpr.ca.gov/infodocs.cfm?page=navigate#navpur 
+- https://github.com/CAWaterBoardDataCenter/tribal-water-data-map-manual/issues/7
+:::
+
+## Pesticide use
+
+1. Retrieve CalEnviroScreen data
+
+```{r ces_shp}
+#| echo: true
+#| code-line-numbers: "1-4|5-6"
+#| results: false
+unzip(paste(here(), "data/raw/calenviroscreen40shpf2021shp.zip", sep="/"), exdir = "data/raw/calenviroscreen40shpf2021shp")
+ces_shp <- paste(here(), "data/raw/calenviroscreen40shpf2021shp/CES4 Final Shapefile.shp", sep="/")
+ces <- read_sf(ces_shp) %>% st_transform(4326)
+```
+
+::: footer
+🔗 [Tribal Water Data Map - Layer Guide - CalEnviroScreen - Agricultural Pesticides](https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides)
+
+🔗 [CalEnviroScreen - Download Data](https://oehha.ca.gov/calenviroscreen/download-data)
+:::
+
+## Pesticide use
+
+2. Map pesticide use
+
+```{r ces_map}
+#| echo: true
+#| code-line-numbers: "4-6|8-10"
+#| results: false
+#| output-location: slide
+plotTheme <- list(
+  theme_void(), 
+  theme(
+    plot.title = element_text(size = 14, face = "bold"), legend.position = "top", legend.direction = "horizontal"
+  )
+)
+
+pesticide_use <- list(geom_sf(
+  ces, color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP)
+), scale_fill_distiller(
+  palette = "Greens", direction = 1
+))
+
+ggplot() + pesticide_use + labs(
+  title = "Agricultural Pesticide Use by Census Tract", subtitle = "Darker shade = higher percentile = more intensive pesticide use"
+) + plotTheme
+```
+
+## Failing water systems
+
+3. Retrieve SAFER data
+
+```{r safer_csv}
+#| echo: true
+#| results: false
+safer_ra <- read_csv(paste(here(), "data/raw/SAFER_RA.csv", sep="/"))
+```
+
+::: footer
+🔗 [Drinking Water Risk Assessment - California State Water Resource Control Boards - Division of Drinking Water](https://data.ca.gov/dataset/safer-failing-and-at-risk-drinking-water-systems)
 :::
 
 ## Failing water systems
 
-[ Map failing water systems]
+4. Map failing water systems
 
-## SAFER funding
+```{r safer_map}
+#| echo: true
+#| code-line-numbers: "1-5|7-9"
+#| results: false
+#| output-location: slide
+failing_water_systems <- geom_point(
+    safer_ra %>% 
+      filter(LATITUDE_MEASURE != 0) %>% 
+      filter(CURRENT_FAILING == "Failing"), 
+    shape = 21, colour = "white", fill = "#9E1B07", size=3, stroke=0.5,
+    mapping = aes(x = LONGITUDE_MEASURE, y = LATITUDE_MEASURE)
+  )
 
-[ Map SAFER funding ]
+ggplot() + borders("state", region = "california") + failing_water_systems + coord_quickmap() + labs(
+  title = "Failing Water Systems", subtitle = "Status determined by 2024 SAFER Risk Analysis"
+) + plotTheme
+```
 
 ## Putting it all together
 
-[ Overlay agriculture, failing water systems, SAFER funding ]
+5. Overlay pesticide use with failing water systems
+
+```{r ces_safer_map}
+#| echo: true
+#| results: false
+#| output-location: slide
+ggplot() +
+    pesticide_use +
+    failing_water_systems + 
+    plotTheme + labs(title = "Pesticide Use and Failing Water Systems")
+```
 
 ## Putting it all together
 
-::: incremental
-- What is our approach?
-  - Augment SAFER investments or fill the gaps?
-- What do we have the authority to do?
-- What cause/s can we address?
-- What partners do we need to find that are outside of that scope?
-:::
+- Aggregate water system status to tract and compare intensity of pesticide use with prevalence of failing water systems
+
+## What should we do?
+
+- What do we have the authority to do? What cause/s can we address?
+- What interventions are already in place?
+- Determine relationship to existing interventions
 
 ::: notes
-Gaps: Concentration of agricultural activity w/o high level of SAFER funding
+Augment SAFER investments or fill the gaps?
 :::
+
+## Filling the gaps
+
+Aggregate SAFER funding by tract.
+
+```{r safer_funding_by_tract}
+#| echo: true
+#| code-line-numbers: 1-2|3-5|6|7-10
+ca_tracts <- tigris::tracts(state = "CA", year=2024) %>% st_transform(4326)
+safer_ra_sf <- st_as_sf(safer_ra %>% filter(LONGITUDE_MEASURE != 0), coords=c("LONGITUDE_MEASURE", "LATITUDE_MEASURE"), crs=4326)
+safer_tracts <- st_join(ca_tracts, safer_ra_sf)
+safer_funding_by_tract <- safer_tracts %>% group_by(GEOID) %>% 
+replace_na(list(FUNDING_RECEIVED_SINCE_2017=0)) %>% summarise(funding_received=sum(FUNDING_RECEIVED_SINCE_2017) / 1000000)
+```
+
+## Filling the gaps
+
+Highlight tracts receiving SAFER funding.
+
+```{r combined_map}
+#| echo: true
+#| code-line-numbers: 1-3|5-6
+#| output-location: slide
+funding_received <- geom_sf(data = safer_funding_by_tract %>% filter(funding_received > 0), linewidth = 0.5, alpha = 0, color = "black")
+
+ggplot() +
+    pesticide_use +
+    funding_received +
+    failing_water_systems + 
+    plotTheme + labs(title = "Pesticide Use and Failing Water Systems", subtitle = "Tracts with one or more water system receiving funding from SAFER outlined in black")
+```
+
+::: notes
+- Maybe you're not in SAFER... but you can use that to understand where support exists...
+- Maybe you are in SAFER, evaluate use of resources
+:::
+
+## Filling the gaps
+
+Identify water systems receiving little/no SAFER funding in tracts with high pesticide use.
+
+```{r, evaluate = FALSE}
+ces_plus_safer_ra <- st_join(ces, safer_funding_by_tract)
+```
 
 ## Putting it all together
 
-Once you've identified your candidate water systems, repeat the original analysis
-with your reproducible code!
+Once you've identified your candidate water systems, repeat the original analysis with your reproducible code!
 
 ::: incremental
 - May find a dozen places that “look” the same as Lamont
 - Prioritize places where you see disparity
 - Interrogate the problem and intervene where the same mechanism is at play
 :::
+
+## Where do we go from here?
+
+::: incremental
+- There are lots of wrong ways, but no one right way
+- Opportunities for community engagement and partnerships
+  - Validate and/or sharpen findings from data analysis
+  - Address mechanisms outside your remit
+:::
+
+::: notes
+Ok to end with oh shit, we haven't found the answer yet
+Normalize data limitations
+
+https://cawaterboarddatacenter.github.io/equity-data-handbook-training/modules/interrogating-mechanism#/further-interrogating-the-failing-water-system-in-lamont -- can you add a link to the press release to the bottom of this slide?
+Analyzing Data for Racial Equity
+ 
+JK - it's on the next slide. 
+ 
+Spelling error on https://cawaterboarddatacenter.github.io/equity-data-handbook-training/modules/interrogating-mechanism#/further-interrogating-the-failing-water-system-in-lamont-2
+ 
+3rd bullet - "What hadn't" should be "Why hadn't"...?
+Analyzing Data for Racial Equity
+ 
+
+ 
+Add link to methods page?
+Analyzing Data for Racial Equity
+::: 

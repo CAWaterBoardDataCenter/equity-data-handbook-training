@@ -200,7 +200,10 @@ Welcome to the tidyverse! 👋
 :::
 
 ::: footer
+🔗 [Wide vs. long data](https://www.waterboards.ca.gov/resources/oima/cowi/data_management_handbook.html#collect_process)
+
 🔗 [`tidyr` documentation](https://tidyr.tidyverse.org/index.html)
+
 🔗 [`ggplot2` documentation](https://ggplot2.tidyverse.org/)
 :::
 
@@ -222,6 +225,12 @@ using Census data
 - The coaching website includes methods for retrieving Census data in Python
 and via web browser
 :::
+
+## Who was exposed to contaminated water?
+
+**1. Retrieve Census data**
+
+Get your Census API key!
 
 ## Who was exposed to contaminated water?
 
@@ -264,6 +273,12 @@ city_boundary <- tigris::places(state = STATE, cb = TRUE) %>%
 
 city_blocks <- st_filter(county_blocks, city_boundary)
 ```
+
+## Who was exposed to contaminated water?
+
+**2. Generate dot density map layer**
+
+What's a dot density map?
 
 ## Who was exposed to contaminated water?
 
@@ -433,6 +448,11 @@ city_blocks_with_water_sources <- merge(city_blocks,
                                         all.x = TRUE)
 ```
 
+::: footer
+https://github.com/USEPA/ORD_Water_Source_2020
+https://media.githubusercontent.com/media/USEPA/ORD_Water_Source_2020/5e717b36419251bec97d8795a2e08308f9a7faef/outputs/Well_Estimates_2020_Blks.csv?download=true
+:::
+
 ## Assumption 2: Water use is evenly distributed
 
 ```{r census_blocks_with_water_sources_map, cache=TRUE, fig.cap="Probability of Public Water"}
@@ -538,3 +558,8 @@ Planning](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-pre
 - 8-10 minute breakout room (6 rooms, 5/room), 5-10 minute share
 out/discussion round robin, 2 ideas from each group
 :::
+
+## Breakout room instructions
+
+- 8-10 min breakout room
+- Share out 2 ideas from each group
