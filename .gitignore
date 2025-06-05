@@ -8,6 +8,6 @@ modules/*_cache/
 modules/*_files/
 
 data/raw/well_blocks.csv
-data/raw/calenviroscreen40shpf2021shp/
+# data/raw/calenviroscreen40shpf2021shp/
 /.quarto/
 /_site/
