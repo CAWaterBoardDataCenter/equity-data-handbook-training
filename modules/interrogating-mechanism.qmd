@@ -64,17 +64,6 @@ it](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-prep/plan
 
 ## Module 1: Identifying Injustice Recap
 
-**Root cause analysis** is a framework for identifying the core mechanism of injustice
-
-![](assets/rca_template.png)
-
-::: footer
-📖 [Equity Data Handbook - Evaluation - Root Cause
-Analysis](https://cawaterboarddatacenter.github.io/equity-data-handbook/eval.html#root-cause-analysis)
-:::
-
-## Module 1: Identifying Injustice Recap
-
 ::: columns
 ::: {.column width="50%"}
 As of 2024, California had 220 failing drinking water systems serving
@@ -97,7 +86,7 @@ Contaminant Level of arsenic and 1,2,3-tricholoropropane.
 ## Module 1: Identifying Injustice Recap
 
 We found that people living in the **city center** are more likely to use public water,
-and that in Lamont, those people are more likely to be **Hispanic** or of **Tribal** origin.
+and that in Lamont, those people are more likely to be **Hispanic** in origin.
 
 We also know from the linked press release that mitigation efforts in Lamont included the destruction of **three 45-year-old wells**
 that exceeded the state Maximum Contaminant Levels (MCL) for **arsenic** and 
@@ -107,6 +96,30 @@ that exceeded the state Maximum Contaminant Levels (MCL) for **arsenic** and
 🔗 [Water Board grants Lamont District $25.4 million to secure safe drinking water for 20,000 residents](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf)
 
 🔗 [California State Water Resources Control Board - 1,2,3,-Trichloropropane (1,2,3 - TCP) - Background](https://waterboards.ca.gov/drinking_water/certlic/drinkingwater/123TCP.html)
+:::
+
+## Root cause analysis
+
+> "Technique that helps identify the fundamental reasons, or root causes, of a problem or unwanted outcome"
+
+::: incremental
+- Assemble team, **including community partners**
+- Allocate time
+- Honor hard truths
+:::
+
+::: footer
+📖 [Equity Data Handbook - Evaluation - Root Cause
+Analysis](https://cawaterboarddatacenter.github.io/equity-data-handbook/eval.html#root-cause-analysis)
+:::
+
+## Interrogating the problem
+
+![](assets/rca_template.png)
+
+::: footer
+📖 [Equity Data Handbook - Evaluation - Root Cause
+Analysis - Process](https://cawaterboarddatacenter.github.io/equity-data-handbook/eval.html#process)
 :::
 
 ## What are the root causes of contamination and exposure to it?

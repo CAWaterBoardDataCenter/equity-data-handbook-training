@@ -19,16 +19,16 @@ library(tidycensus)
 library(sf)
 library(patchwork)
 library(dots)
+library(knitr)
 
 tidycensus::census_api_key("ce143e4c445f1ccaed3aa214715bebcb9a487cfa")
 ```
 
-```{r config, echo=FALSE}
-library(knitr)
-
+```{r config, echo = FALSE}
 knitr::opts_chunk$set(message = FALSE,
                       tidy.opts = list(width.cutoff = 60),
-                      tidy = TRUE)
+                      tidy = TRUE,
+                      cache = TRUE)
 options(scipen = 999,
         digits = 2,
         tigris_use_cache = TRUE) # Cache Census geographies to avoid repeat downloads
@@ -81,8 +81,8 @@ Language](https://cawaterboarddatacenter.github.io/equity-data-handbook/get-star
 -   The Water Boards defines equity as "a future where race no longer
     predicts a person’s access to water or the quality of water
     resources they receive"
--   It follows that inequity looks like a difference or disparity in
-    access or resources
+-   It follows that inequity looks like **a difference or disparity in
+    access or resources**
 :::
 
 ::: footer
@@ -115,30 +115,6 @@ Considering the **mechanism of injustice** allows us to:
   -   Identify other places affected by the same cause or mechanism.
 :::
 
-## Root cause analysis
-
-> "Technique that helps identify the fundamental reasons, or root causes, of a problem or unwanted outcome"
-
-::: incremental
-- Assemble team, **including community partners**
-- Allocate time
-- Honor hard truths
-:::
-
-::: footer
-📖 [Equity Data Handbook - Evaluation - Root Cause
-Analysis](https://cawaterboarddatacenter.github.io/equity-data-handbook/eval.html#root-cause-analysis)
-:::
-
-## Interrogating the problem
-
-![](assets/rca_template.png)
-
-::: footer
-📖 [Equity Data Handbook - Evaluation - Root Cause
-Analysis - Process](https://cawaterboarddatacenter.github.io/equity-data-handbook/eval.html#process)
-:::
-
 # Exercise: Failing water system in Lamont
 
 ## Background
@@ -168,6 +144,7 @@ Contaminant Level of arsenic and 1,2,3-tricholoropropane.
 -   Why is the water contaminated?
 -   Who was exposed to water from this system? How?
 -   Are there racial disparities in exposure? Why?
+- **Other questions?**
 :::
 
 ## Reproducible data analysis
@@ -180,66 +157,44 @@ Why work in R (or another scriping language or software, such as Excel)?
 :::
   
 ::: notes
-- Approaches will be common across programming languages and software
-- Details will be presented in R
+Approaches will be common across programming languages and software
+Details will be presented in R
 
 TODO: Add code annotations: https://www.productive-r-workflow.com/quarto-tricks#code-annotation
 :::
 
-## Reproducible data analysis
+## Who was exposed?
 
-Welcome to the tidyverse! 👋
-
-::: incremental
-- `tidyr`
-  - **tidyr::pivot_longer() / tidyverse::pivot_wider()** – Make wide data long, and long data wide, respectively
-- `ggplot2`
-  - **ggplot2::ggplot()** - Create plot from data
-  - **ggplot2::geom_sf()** - Add geographic layer to plot
-  - **ggplot2::facet_wrap()** - Create plots for each group value
-:::
-
-::: footer
-🔗 [Wide vs. long data](https://www.waterboards.ca.gov/resources/oima/cowi/data_management_handbook.html#collect_process)
-
-🔗 [`tidyr` documentation](https://tidyr.tidyverse.org/index.html)
-
-🔗 [`ggplot2` documentation](https://ggplot2.tidyverse.org/)
-:::
-
-## Reproducible data analysis
-
-::: incremental
-- `tidycensus`
-  - **tidycensus::get_decennial() / tidycensus::get_acs()** - Retrieve data for specified variables and survey, with option to retrieve geospatial data
-:::
+Let's use Census data to determine who lives in Lamont, i.e., who was exposed to contaminated
+water. We'll use the `tidycensus` R package to retrieve 2020 Census race/ethnicity data by Census block.
   
 ::: footer
 🔗 [`tidycensus` documentation](https://walker-data.com/tidycensus/)
 :::
-  
+
 ::: notes
-- To determine who was exposed, let's take a look at the population of Lamont
-using Census data
-- Why not ACS? Census data is available at a smaller resolution
-- The coaching website includes methods for retrieving Census data in Python
-and via web browser
+The coaching website includes methods for retrieving Census data in Python and via web browser
 :::
 
-## Who was exposed to contaminated water?
+## Who was exposed?
 
-**1. Retrieve Census data**
+Get your Census API key.
 
-Get your Census API key!
+![Screenshot of the Census API key request form](assets/census_api_key.png)
 
-## Who was exposed to contaminated water?
+::: footer
+🔗 [US Census Bureau - Request a U.S. Census Data API Key](https://api.census.gov/data/key_signup.html)
+:::
 
-**1. Retrieve Census data**
+## Who was exposed?
 
-```{r race_ethnicity_by_block, cache=TRUE}
+Retrieve Census data.
+
+```{r race_ethnicity_by_block}
 #| echo: true
-#| code-line-numbers: "1-7|9-14|16-19"
+#| code-line-numbers: "1|3-9|11-16|18-21"
 #| results: false
+# tidycensus::census_api_key(YOUR KEY HERE)
 
 STATE <- "CA"
 COUNTY <- "Kern"
@@ -274,63 +229,60 @@ city_boundary <- tigris::places(state = STATE, cb = TRUE) %>%
 city_blocks <- st_filter(county_blocks, city_boundary)
 ```
 
-## Who was exposed to contaminated water?
+## Who was exposed?
 
-**2. Generate dot density map layer**
-
-What's a dot density map?
-
-## Who was exposed to contaminated water?
-
-**2. Generate dot density map layer**
-
-```{r race_dots}
-#| echo: true
-#| code-line-numbers: "1-2|3-5"
-race_dots <- dots::dots_points(shp = city_blocks,
-                               cols = c(value_Hispanic,
-                                        value_White,
-                                        value_Black),
-                               divisor = 10)  %>% 
-  mutate(dots_type = case_when(dots_type == "value_Hispanic" ~ "Hispanic",
-                               dots_type == "value_White" ~ "White",
-                               dots_type == "value_Black" ~ "Black"))
+```{r, echo = FALSE}
+kable(city_blocks %>% slice(1:10))
 ```
 
-::: footer
-🔗 [`dots` documentation](https://christophertkenny.com/dots/)
+## Who was exposed?
+
+Aggregate block-level results.
+
+::: fragment
+```{r block_level_aggregates}
+#| echo = TRUE
+race_ethnicity_summary <- city_blocks %>% 
+    summarise(
+      total_population=sum(summary_value), 
+      n_white=sum(value_White), 
+      pct_white=n_white/total_population, 
+      n_black=sum(value_Black), 
+      pct_black=n_black/total_population, 
+      n_hispanic=sum(value_Hispanic), 
+      pct_hispanic=n_hispanic/total_population
+    )
+```
 :::
 
-## Who was exposed to contaminated water?
-
-**3. Create dot density map**
-
-```{r dot_density, fig.cap="Dot density plot of racial and ethnic distribution. One dot = 10 people"}
-#| echo: true
-#| code-line-numbers: ""
-#| output-location: slide
-ggplot() +
-    geom_sf(data = city_blocks,
-          fill = "grey", color = NA) +
-  geom_sf(data = race_dots, size = 0.1) +
-  facet_wrap(~ dots_type) +
-  theme(legend.position = "none",
-        axis.ticks = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank())
-```
+::: fragment
+| Population | Count | Percent |
+| - | -: | -: |
+| White | `r race_ethnicity_summary$n_white` | `r race_ethnicity_summary$pct_white * 100` |
+| Black | `r race_ethnicity_summary$n_black` | `r race_ethnicity_summary$pct_black * 100` |
+| Hispanic | `r race_ethnicity_summary$n_hispanic` | `r race_ethnicity_summary$pct_hispanic * 100` |
+:::
 
 ## Assumptions
 
 What are some of the assumptions that we’ve made in this analysis, either
-explicitly or implicitly that could pose a problem?
+explicitly or implicitly, that could pose a problem?
+
+::: fragment
+**What do you think? Speak up or type your ideas in the chat.**
+:::
+
+## Assumptions
+
+What are some of the assumptions that we’ve made in this analysis, either
+explicitly or implicitly, that could pose a problem?
 
 ::: incremental
 -   2020 Census Data accurately reflects the population in 2024
--   Everyone is equally capable of choosing/changing where they live
 -   The demographic groups we selected are representative of the
     entire population
--   Public water use is evenly distributed
+-   Everyone uses public water
+-   The population of Lamont is evenly distributed
 :::
 
 ::: footer
@@ -339,96 +291,176 @@ Limitations](https://cawaterboarddatacenter.github.io/equity-data-handbook/colle
 🔗 [Redlining and Environmental Injustice in California](https://storymaps.arcgis.com/stories/f167b251809c43778a2f9f040f43d2f5)
 :::
 
-::: notes
-- Census vs. ACS: Tradeoffs
-  - Census data available at the block level, or smallest resolution
-  - ACS is only available at the tract level, or the next smallest resolution
-:::
-
 # Challenging assumptions
 
-## Assumption 1: Selected groups are representative of the entire population {auto-animate=true}
+## Assumption 1: 2020 Census Data accurately reflects the population in 2024
 
-```{r race_dots_redux}
-#| echo: true
-#| eval: false
-#| code-line-numbers: true
-race_dots <- dots::dots_points(shp = city_blocks,
-                               cols = c(value_Hispanic,
-                                        value_White,
-                                        value_Black),
-                               divisor = 10)  %>% 
-  mutate(dots_type = case_when(dots_type == "value_Hispanic" ~ "Hispanic",
-                               dots_type == "value_White" ~ "White",
-                               dots_type == "value_Black" ~ "Black"))
-```
+Why decennial Census block data?
 
-## Assumption 1: Selected groups are representative of the entire population {auto-animate=true}
+::: incremental
+- **Blocks** are the smallest geographic unit but they are only available from 
+decennial Census, not ACS estimates
+- One reason for this is margin of error, which tends to be higher among smaller 
+populations
+- The ACS gives us access to **block groups**, but as the population of Lamont is 
+small, the population of block groups may be small, so estimates may still have
+high margins of error
+:::
 
-```{r revised_race_dots}
-#| echo: true
-#| code-line-numbers: "2,5"
-revised_race_dots <- dots::dots_points(shp = city_blocks,
-                               cols = c(value_Hispanic,
-                                        value_White,
-                                        value_Black,
-                                        value_AmericanIndian),
-                               divisor = 10)  %>% 
-  mutate(dots_type = case_when(dots_type == "value_Hispanic" ~ "Hispanic",
-                               dots_type == "value_White" ~ "White",
-                               dots_type == "value_Black" ~ "Black",
-                               dots_type == "value_AmericanIndian" ~ "Tribal"))
-```
+## Assumption 1: 2020 Census Data accurately reflects the population in 2024
 
-## Assumption 1: Selected groups are representative of the entire population {auto-animate=true}
+Why decennial Census block data?
 
-```{r dot_density_redux, eval=FALSE}
-#| echo: true
-#| code-line-numbers: ""
-ggplot() +
-    geom_sf(data = city_blocks,
-          fill = "grey", color = NA) +
-  geom_sf(data = race_dots, size = 0.1) +
-  facet_wrap(~ dots_type) +
-  theme(legend.position = "none",
-        axis.ticks = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank())
-```
+::: incremental
+- Census data is a count, while ACS data is an estimate
+  - Some groups are more likely to be underrepresented in a count, but estimates
+  can have large margin of error
+:::
 
-## Assumption 1: Selected groups are representative of the entire population {auto-animate=true}
+::: footer
+🔗 [US Census Bureau - Understanding Hard-to-Count and Historically Undercounted Populations](https://www.census.gov/newsroom/blogs/random-samplings/2023/10/understanding-undercounted-populations.html)
+:::
 
-```{r revised_dot_density, fig.cap="Dot density plot of racial and ethnic distribution. One dot = 10 people"}
-#| echo: true
-#| code-line-numbers: "2"
-#| output-location: slide
-ggplot() +
-    geom_sf(data = city_blocks,
-          fill = "grey", color = NA) +
-  geom_sf(data = revised_race_dots, size = 0.1) +
-  facet_wrap(~ dots_type) +
-  theme(legend.position = "none",
-        axis.ticks = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank())
-```
+## Assumption 1: 2020 Census Data accurately reflects the population in 2024
 
-## Assumption 2: Public water use is evenly distributed
+Consider trade offs!
 
+::: incremental
+- Recent vs. precise
+- Estimate vs. count
+- More vs. less granular
+:::
+
+## Assumption 2: Selected demographic groups are representative
+
+We selected three categories of race/ethnicity. Do they account for 100% of the population?
+
+::: columns
+::: {.column width="50%"}
+| Population | Count | Percent |
+| - | -: | -: |
+| White | `r race_ethnicity_summary$n_white` | `r race_ethnicity_summary$pct_white * 100` |
+| Black | `r race_ethnicity_summary$n_black` | `r race_ethnicity_summary$pct_black * 100` |
+| Hispanic | `r race_ethnicity_summary$n_hispanic` | `r race_ethnicity_summary$pct_hispanic * 100` |
+:::
+
+::: {.column width="50%}
 ::: fragment
-**What about private wells?**
+| Analysis population | Total population | Difference |
+| - | - | - |
+| `r race_ethnicity_summary$n_white + race_ethnicity_summary$n_black + race_ethnicity_summary$n_hispanic` | `r race_ethnicity_summary$total_population` | **`r (race_ethnicity_summary$n_white + race_ethnicity_summary$n_black + race_ethnicity_summary$n_hispanic) - race_ethnicity_summary$total_population`** |
+:::
+:::
+:::
+
+## Assumption 2: Selected demographic groups are representative {auto-animate=true}
+
+```{r}
+#| echo = TRUE
+race_ethnicity_summary <- city_blocks %>% 
+    summarise(
+      total_population=sum(summary_value), 
+      n_white=sum(value_White), 
+      pct_white=n_white/total_population, 
+      n_black=sum(value_Black), 
+      pct_black=n_black/total_population, 
+      n_hispanic=sum(value_Hispanic), 
+      pct_hispanic=n_hispanic/total_population
+    )
+```
+
+## Assumption 2: Selected demographic groups are representative {auto-animate=true}
+```{r}
+#| echo = TRUE
+race_ethnicity_summary <- city_blocks %>% 
+    summarise(
+      total_population=sum(summary_value), 
+      n_white=sum(value_White), 
+      pct_white=n_white/total_population, 
+      n_black=sum(value_Black), 
+      pct_black=n_black/total_population, 
+      n_hispanic=sum(value_Hispanic), 
+      pct_hispanic=n_hispanic/total_population,
+      n_amind=sum(value_AmericanIndian),
+      pct_amind=n_amind/total_population,
+      n_asian=sum(value_Asian),
+      pct_asian=n_asian/total_population,
+      n_pi=sum(value_HawaiianPacificIslander),
+      pct_pi=n_pi/total_population,
+      n_other=sum(value_Other),
+      pct_other=n_other/total_population,
+      n_tom=sum(value_TwoOrMoreRaces),
+      pct_tom=n_tom/total_population
+    )
+```
+
+## Assumption 2: Selected demographic groups are representative
+
+
+::: columns
+::: {.column width="50%"}
+| Population | Count | Percent |
+| - | -: | -: |
+| White | `r race_ethnicity_summary$n_white` | `r race_ethnicity_summary$pct_white * 100` |
+| Black | `r race_ethnicity_summary$n_black` | `r race_ethnicity_summary$pct_black * 100` |
+| Hispanic | `r race_ethnicity_summary$n_hispanic` | `r race_ethnicity_summary$pct_hispanic * 100` |
+| American Indian | `r race_ethnicity_summary$n_amind` | `r race_ethnicity_summary$pct_amind * 100` |
+| Asian | `r race_ethnicity_summary$n_asian` | `r race_ethnicity_summary$pct_asian * 100` |
+| Hawaiian/Pacific Islander | `r race_ethnicity_summary$n_pi` | `r race_ethnicity_summary$pct_pi * 100` |
+| Other | `r race_ethnicity_summary$n_other` | `r race_ethnicity_summary$pct_other * 100` |
+| Two or More | `r race_ethnicity_summary$n_tom` | `r race_ethnicity_summary$pct_tom * 100` |
+:::
+
+::: {.column width="50%"}
+::: fragment
+| Analysis population | Total population | Difference |
+| - | - | - |
+| `r race_ethnicity_summary$n_white + race_ethnicity_summary$n_black + race_ethnicity_summary$n_hispanic + race_ethnicity_summary$n_amind + race_ethnicity_summary$n_asian + race_ethnicity_summary$n_pi + race_ethnicity_summary$n_other + race_ethnicity_summary$n_tom` | `r race_ethnicity_summary$total_population` | **`r (race_ethnicity_summary$n_white + race_ethnicity_summary$n_black + race_ethnicity_summary$n_hispanic + race_ethnicity_summary$n_amind + race_ethnicity_summary$n_asian + race_ethnicity_summary$n_pi + race_ethnicity_summary$n_other + race_ethnicity_summary$n_tom) - race_ethnicity_summary$total_population`** |
+:::
+:::
+:::
+
+::: footer
+🔗 [Census Reporter - Race and Hispanic Origin](https://censusreporter.org/topics/race-hispanic/)
 :::
 
 ::: notes
-In 2024, the US EPA attempted to predict the probability that residents
-within a census block were using water from a public utility or private
-well. Their model used data from the 1990 Decennial Census,
-administrative data on well permitting, and other measures.
+Include all race/ethnicity options
+Imagine if we had omitted the Asian population from the San Francisco area or the tribal population from a county including a tribal reservation
+Ethnic groups are not homogenous! Consider whether distinctions (e.g., white vs. black Hispanic, specific subgroups, Middle Eastern / North African descent [categorized as White]) are meaningful to your analysis and delve deeper into detail tables, if so. Also important if you have a significant population of two or more races.
 :::
 
-## Assumption 2: Public water use is evenly distributed
+## Assumption 2: Selected demographic groups are representative
+
+PSA: The way the Census Bureau collects demographic data is changing!
+
+<iframe src="https://embed.documentcloud.org/documents/24521639/annotations/2444381/?embed=1" width="100%" height="600px" style="border: 1px solid #d8dee2; border-radius: 0.5rem;"></iframe>
+
+::: notes
+🔗 [U.S. Census changes how it identifies people by race and ethnicity, creates Middle Eastern category for first time](https://www.pbs.org/newshour/politics/u-s-census-changes-how-it-identifies-people-by-race-and-ethnicity-creates-middle-eastern-and-north-african-category-for-first-time)
+:::
+
+## Assumption 3: Everyone uses public water
+
+::: fragment
+What about private wells?
+:::
+
+::: fragment
+In 2024, the US EPA attempted to predict the probability that residents
+within a census block were using water from a public utility or private
+well.
+:::
+
+
+## Assumption 3: Everyone uses public water
+
+Let's use EPA's estimates of probability of public water use to see where
+Lamont residents are most likely to use public water.
 
 ```{r water_source_data, cache=TRUE}
+#| echo: true
+#| code-line-numbers: "|1-11"
 well_data_file <- "../data/raw/well_blocks.csv"
   
 if (!file.exists(well_data_file)) {
@@ -437,10 +469,7 @@ if (!file.exists(well_data_file)) {
 }
 
 water_sources <- read_tsv(well_data_file)
-```
 
-```{r census_with_water_sources, cache=TRUE}
-#| echo: true
 city_blocks_with_water_sources <- merge(city_blocks,
                                         water_sources,
                                         by.x = "GEOID",
@@ -449,13 +478,32 @@ city_blocks_with_water_sources <- merge(city_blocks,
 ```
 
 ::: footer
-https://github.com/USEPA/ORD_Water_Source_2020
-https://media.githubusercontent.com/media/USEPA/ORD_Water_Source_2020/5e717b36419251bec97d8795a2e08308f9a7faef/outputs/Well_Estimates_2020_Blks.csv?download=true
+🔗 [GitHub - US EPA - Estimates of Domestic Water Sources in the United States (2020)](https://github.com/USEPA/ORD_Water_Source_2020)
 :::
 
-## Assumption 2: Water use is evenly distributed
+## Assumption 3: Everyone uses public water
 
-```{r census_blocks_with_water_sources_map, cache=TRUE, fig.cap="Probability of Public Water"}
+```{r p_pub_water_table, echo = FALSE}
+ppw_summary <- city_blocks_with_water_sources %>% st_drop_geometry() %>% select(NAME, Prob_Pub)
+kable(ppw_summary %>% arrange(desc(Prob_Pub)) %>% slice(1:3), caption = "Probability Household Uses Public Water Utility")
+kable(ppw_summary %>% arrange(Prob_Pub) %>% slice(1:3), caption = "...")
+```
+
+::: footer
+🔗 [GitHub - US EPA - Estimates of Domestic Water Sources in the United States (2020)](https://github.com/USEPA/ORD_Water_Source_2020)
+:::
+
+::: notes
+We can see that the probability of public water use can vary quite a bit! Our
+highest use is 98 percent, while our lowest is 9!
+:::
+
+## Assumption 3: Everyone uses public water
+
+Now, let's map our probability data so we can see the variability and understand
+where public water use is most likely.
+
+```{r census_blocks_with_water_sources_map, cache=TRUE}
 #| echo: true
 #| output-location: slide
 ggplot() +
@@ -464,23 +512,86 @@ ggplot() +
                         fill = Prob_Pub),
                         color = NA) +
   scale_fill_distiller(palette = "OrRd", direction = 1, labels = scales::percent) +
-  labs(fill = "Probability of Public Water") +
+  labs(fill = "Probability of Public Water Use") +
   theme(axis.ticks = element_blank(),
         axis.text.x = element_blank(),
         axis.text.y = element_blank())
 ```
 
-# Putting it all together
+## Assumption 4: The population of Lamont is evenly distributed
 
-## Putting it all together {auto-animate=true}
+We know that the probability of public water use, i.e., exposure to contaminants,
+varies by where someone lives. What are the population dynamics in Lamont? Are
+residents of all races & ethnicities evenly distributed?
 
-```{r putting_it_all_together_baseline, eval=FALSE}
+Let's make some dot density maps to find out!
+
+## Assumption 4: The population of Lamont is evenly distributed
+
+A dot density map places dots representing one (or more) people or instances of
+a phenomenon randomly within the geography where they live or occur. It approximately
+illustrates the distribution of people or events in space.
+
+![Example of dot density map](assets/dot_density_map.png)
+
+N.b., Dots are randomly placed, i.e., the location of a dot does not indicate the
+location of a person or event.
+
+::: footer
+🔗 [FlowingData - Dot Density Map](https://flowingdata.com/charttype/dot-density-map/)
+:::
+
+## Assumption 4: The population of Lamont is evenly distributed
+
+Let's use the `dots` R package to generate random dot data for our maps.
+
+```{r race_dots}
 #| echo: true
-#| code-line-numbers: ""
+race_dots <- dots::dots_points(shp = city_blocks,
+                               cols = c(value_Hispanic,
+                                        value_White,
+                                        value_Asian,
+                                        value_TwoOrMoreRaces),
+                               divisor = 10)  %>% 
+  mutate(dots_type = case_when(dots_type == "value_Hispanic" ~ "Hispanic",
+                               dots_type == "value_White" ~ "White",
+                               dots_type == "value_Asian" ~ "Asian",
+                               dots_type == "value_TwoOrMoreRaces" ~ "Two or More Races"))
+```
+
+## Assumption 4: The population of Lamont is evenly distributed {auto-animate=true}
+
+Next, let's make our map.
+
+```{r dot_density_map}
+#| echo: true
+#| output-location: slide
 ggplot() +
     geom_sf(data = city_blocks,
           fill = "grey", color = NA) +
-  geom_sf(data = race_dots, size = 0.1) +
+  geom_sf(data = race_dots, size = 0.5, mapping = aes(color = dots_type)) +
+  scale_color_brewer(type = "qual", palette = 6) +
+  theme(axis.ticks = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+```
+
+::: notes
+Encoding population type in a color is one way to show this data, but it's
+pretty tough to read.
+:::
+
+## Assumption 4: The population of Lamont is evenly distributed {auto-animate=true}
+
+Let's use small multiples to make our map more legible.
+
+```{r dot_density_map_facets}
+#| echo: true
+#| output-location: slide
+ggplot() +
+    geom_sf(data = city_blocks,
+          fill = "grey", color = NA) +
+  geom_sf(data = race_dots, size = 0.5) +
   facet_wrap(~ dots_type) +
   theme(legend.position = "none",
         axis.ticks = element_blank(),
@@ -488,7 +599,15 @@ ggplot() +
         axis.text.y = element_blank())
 ```
 
-```{r dot_density_water_probability, fig.cap="Dot density plot of racial and ethnic distribution. One dot = 10 people"}
+# Putting it all together
+
+## Putting it all together
+
+We know that both the probability of public water use and the race/ethnicity
+of residents varies by Census block. We can overlay our water use map with our
+dot density maps to illustrate that point.
+
+```{r dot_density_water_probability}
 #| echo: true
 #| code-line-numbers: ""
 #| output-location: slide
@@ -498,68 +617,68 @@ ggplot() +
                         fill = Prob_Pub),
                         color = NA) +
   scale_fill_distiller(palette = "OrRd", direction = 1, labels = scales::percent) +
-  labs(fill = "Probability of Public Water") +
+  labs(title = "Race/Ethnicity and Public Water Use - Lamont, Calif.", subtitle="One dot = 10 people", fill = "Probability of Public Water") +
   theme(axis.ticks = element_blank(),
         axis.text.x = element_blank(),
         axis.text.y = element_blank()) +
-  geom_sf(revised_race_dots, size=0.1, mapping = aes(geometry = geometry)) +
+  geom_sf(race_dots, size=0.1, mapping = aes(geometry = geometry)) +
   facet_wrap(~dots_type)
 ```
 
 ## Putting it all together
+
+To put a finer point on it, we can estimate the proportion of each group likely
+using public water by calculating average probability of public water use
+weighted by the size of each group.
 
 ```{r weighted_averages}
 #| echo: true
 demo_summary <- city_blocks_with_water_sources %>%
   summarize(
     prop_white = weighted.mean(Prob_Pub, w = value_White, na.rm = TRUE),
-    prop_black = weighted.mean(Prob_Pub, w = value_Black, na.rm = TRUE),
+    prop_asian = weighted.mean(Prob_Pub, w = value_Asian, na.rm = TRUE),
     prop_hispanic = weighted.mean(Prob_Pub, w = value_Hispanic, na.rm = TRUE),
-    prop_tribal = weighted.mean(Prob_Pub, w = value_AmericanIndian, na.rm = TRUE),
+    prop_tom = weighted.mean(Prob_Pub, w = value_TwoOrMoreRaces, na.rm = TRUE),
     pp_white = sum(Prob_Pub * value_White, na.rm = TRUE),
-    pp_black = sum(Prob_Pub * value_Black, na.rm = TRUE),
+    pp_asian = sum(Prob_Pub * value_Asian, na.rm = TRUE),
     pp_hispanic = sum(Prob_Pub * value_Hispanic, na.rm = TRUE),
-    pp_tribal = sum(Prob_Pub * value_AmericanIndian, na.rm = TRUE),
+    pp_tom = sum(Prob_Pub * value_TwoOrMoreRaces, na.rm = TRUE),
     white = sum(value_White, na.rm = TRUE),
-    black = sum(value_Black, na.rm = TRUE),
+    asian = sum(value_Asian, na.rm = TRUE),
     hispanic = sum(value_Hispanic, na.rm = TRUE),
-    tribal = sum(value_AmericanIndian, na.rm = TRUE)
+    tom = sum(value_TwoOrMoreRaces, na.rm = TRUE)
   )
 ```
 
 ::: notes
-Weighted averages for the probability a group of people in Franklin
-county are connected to a public water system by block
+This is useful when you want to understand how different groups experience or 
+are exposed to some condition, taking into account they live and how many of
+them there are.
 :::
 
 ## Putting it all together
 
 | Race / Ethnicity | Total | Using Public Water | Percentage |
 |------------------|----------------------|--------------------------|------------------------------|
-| White | `r demo_summary$white` | `r demo_summary$pp_white` | `r demo_summary$prop_white * 100`% |
-| Black | `r demo_summary$black` | `r demo_summary$pp_black` | `r demo_summary$prop_black * 100`% |
 | Hispanic | `r demo_summary$hispanic` | `r demo_summary$pp_hispanic` | `r demo_summary$prop_hispanic * 100`% |
-| Tribal | `r demo_summary$tribal` | `r demo_summary$pp_tribal` | `r demo_summary$prop_tribal * 100`% |
+| White | `r demo_summary$white` | `r demo_summary$pp_white` | `r demo_summary$prop_white * 100`% |
+| Asian | `r demo_summary$asian` | `r demo_summary$pp_asian` | `r demo_summary$prop_asian * 100`% |
+| Two or More Races | `r demo_summary$tom` | `r demo_summary$pp_tom` | `r demo_summary$prop_tom * 100`% |
 
-# Next steps
+## What's next?
 
--   Talk to people in Lamont?
--   Read about arsenic and 1,2,3-trichloropropane and their common
-    sources as pollutants.
--   What else?
+Take **10 minutes** to discuss next steps you might take, given our findings.
+Some examples include:
+
+- Talking to people in Lamont
+- Identifying and answering additional questions
+- Researching existing programs and resources
+
+Use [this planning guidance from the handbook](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-prep/plan.html) for extra context, if needed.
+
+**One person from each group will share a summary of their group's discussion when we reconvene.**
 
 ::: footer
 📖 [Equity Data Handbook -
 Planning](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-prep/plan.html)
 :::
-
-::: notes
-- Let's sharpen this analysis
-- 8-10 minute breakout room (6 rooms, 5/room), 5-10 minute share
-out/discussion round robin, 2 ideas from each group
-:::
-
-## Breakout room instructions
-
-- 8-10 min breakout room
-- Share out 2 ideas from each group
