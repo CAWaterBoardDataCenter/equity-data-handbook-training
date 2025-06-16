@@ -1,4 +1,4 @@
-dockservices:
+services:
   build:
     build:
       context: .
