@@ -5,7 +5,6 @@ format:
   revealjs:
     smaller: true
     scrollable: true
-    code-copy: true
 editor: 
   markdown: 
     wrap: 72
@@ -159,8 +158,6 @@ Why work in R (or another scriping language or software, such as Excel)?
 ::: notes
 Approaches will be common across programming languages and software
 Details will be presented in R
-
-TODO: Add code annotations: https://www.productive-r-workflow.com/quarto-tricks#code-annotation
 :::
 
 ## Who was exposed?
@@ -190,60 +187,121 @@ Get your Census API key.
 
 Retrieve Census data.
 
-```{r race_ethnicity_by_block}
+```{r}
 #| echo: true
-#| code-line-numbers: "1|3-9|11-16|18-21"
-#| results: false
-# tidycensus::census_api_key(YOUR KEY HERE)
+STATE <- "CA" # <1>
+COUNTY <- "Kern" # <1>
+CITY <- "Lamont" # <1>
 
-STATE <- "CA"
-COUNTY <- "Kern"
-CITY <- "Lamont"
-
-racevars <- c(
-  White = "P2_005N",
-  Black = "P2_006N",
-  AmericanIndian = "P2_007N",
-  Asian = "P2_008N",
-  HawaiianPacificIslander = "P2_009N",
-  Other = "P2_010N",
-  TwoOrMoreRaces = "P2_011N",
-  Hispanic = "P2_002N"
-)
-
-county_blocks <- get_decennial(year = 2020,
-                               sumfile = "pl",
-                               variables = racevars,
-                               geography = "block",
-                               state = STATE,
-                               county = COUNTY,
-                               geometry = TRUE,
-                               summary_var = "P2_001N" ) %>%
-  mutate(percent = 100 * (value / summary_value)) %>%
-  pivot_wider(names_from = variable,
-              values_from = c(value, percent))
-
-city_boundary <- tigris::places(state = STATE, cb = TRUE) %>%
-  dplyr::filter(NAME == CITY)
-
-city_blocks <- st_filter(county_blocks, city_boundary)
+racevars <- c( # <2>
+  White = "P2_005N", # <2>
+  Black = "P2_006N", # <2>
+  AmericanIndian = "P2_007N", # <2>
+  Asian = "P2_008N", # <2>
+  HawaiianPacificIslander = "P2_009N", # <2>
+  Other = "P2_010N", # <2>
+  TwoOrMoreRaces = "P2_011N", # <2>
+  Hispanic = "P2_002N" # <2>
+) # <3>
 ```
+
+1. Define the city, county, and state you'd like to retrieve Census data for.
+2. Define the Census variables you'd like to retrieve.
+
+::: footer
+🔗 [US Census Bureau - Census Data API User Guide](https://www.census.gov/data/developers/guidance/api-user-guide.Core_Concepts.html)
+
+🔗 [Census Reporter](https://censusreporter.org/)
+:::
+
+## Who was exposed?
+
+```{r}
+#| echo: true
+# tidycensus::census_api_key(YOUR KEY HERE) # <1>
+
+long_county_blocks <- get_decennial(year = 2020, # <2>
+                               sumfile = "pl", # <2>
+                               state = STATE, # <2>
+                               county = COUNTY, # <2>
+                               geography = "block", # <2>
+                               variables = racevars, # <3>
+                               summary_var = "P2_001N", # <3>
+                               geometry = TRUE) %>% # <4>
+  mutate(percent = 100 * (value / summary_value)) # <5>
+```
+
+1. Store your API key with `tidycensus`.
+2. Use the `get_decennial()` method from `tidycensus` to retrieve 2020 data
+for our specified state and county at the block level.
+3. Specify which variables to retrieve, and define a summary variable. Usually,
+you'll use the total, or **universe**, variable as your summary variable so you
+can, e.g., calculate proportions.
+4. Tell `tidycensus` to return results with geospatial information, for mapping.
+5. Add a new column to your results that calculates the proportion of the
+population each group accounts for.
+
+::: footer
+🔗 [`tidycensus` documentation](https://walker-data.com/tidycensus/)
+:::
 
 ## Who was exposed?
 
 ```{r, echo = FALSE}
-kable(city_blocks %>% slice(1:10))
+kable(long_county_blocks %>% slice(1:10))
 ```
+
+## Who was exposed?
+
+```{r}
+#| echo: true
+county_blocks <- long_county_blocks %>% # <1>
+                    pivot_wider(names_from = variable, # <1>
+                    values_from = c(value, percent)) # <1>
+```
+
+1. Transform your results from long data (one row for each variable for each
+block) to wide data (one row for each block with a column for each variable).
+
+::: footer
+🔗 [`pivot_wider()` documentation](https://tidyr.tidyverse.org/reference/pivot_wider.html)
+:::
+
+## Who was exposed?
+
+```{r, echo = FALSE}
+kable(county_blocks %>% slice(1:10))
+```
+
+## Who was exposed?
+
+```{r}
+#| echo: true
+city_boundary <- tigris::places(state = STATE, cb = TRUE) %>% # <1>
+  dplyr::filter(NAME == CITY) # <1>
+
+city_blocks <- st_filter(county_blocks, city_boundary) # <2>
+```
+
+1. Retrieve the shape of the specified city with the `places()` method from the
+`tigris` package.
+2. Filter your Census results to only blocks within the specified city with the
+`st_filter()` method from the `sf` package.
+
+::: footer
+🔗 [`tigris` documentation](https://github.com/walkerke/tigris)
+
+🔗 [`sf` documentation](https://r-spatial.github.io/sf)
+:::
 
 ## Who was exposed?
 
 Aggregate block-level results.
 
-::: fragment
 ```{r block_level_aggregates}
 #| echo = TRUE
 race_ethnicity_summary <- city_blocks %>% 
-    summarise(
+    summarise( # <1>
       total_population=sum(summary_value), 
       n_white=sum(value_White), 
       pct_white=n_white/total_population, 
@@ -253,7 +311,8 @@ race_ethnicity_summary <- city_blocks %>%
       pct_hispanic=n_hispanic/total_population
     )
 ```
-:::
+
+1. Aggregate per-block data to total population by race/ethnicity group.
 
 ::: fragment
 | Population | Count | Percent |
@@ -261,6 +320,10 @@ race_ethnicity_summary <- city_blocks %>%
 | White | `r race_ethnicity_summary$n_white` | `r race_ethnicity_summary$pct_white * 100` |
 | Black | `r race_ethnicity_summary$n_black` | `r race_ethnicity_summary$pct_black * 100` |
 | Hispanic | `r race_ethnicity_summary$n_hispanic` | `r race_ethnicity_summary$pct_hispanic * 100` |
+:::
+
+::: footer
+🔗 [`summarise()` documentation](https://dplyr.tidyverse.org/reference/summarise.html)
 :::
 
 ## Assumptions
@@ -288,7 +351,6 @@ explicitly or implicitly, that could pose a problem?
 ::: footer
 📖 [Equity Data Handbook - Data Collection - Data
 Limitations](https://cawaterboarddatacenter.github.io/equity-data-handbook/collect-process/collection.html#data-limitations)
-🔗 [Redlining and Environmental Injustice in California](https://storymaps.arcgis.com/stories/f167b251809c43778a2f9f040f43d2f5)
 :::
 
 # Challenging assumptions
@@ -460,25 +522,31 @@ Lamont residents are most likely to use public water.
 
 ```{r water_source_data, cache=TRUE}
 #| echo: true
-#| code-line-numbers: "|1-11"
-well_data_file <- "../data/raw/well_blocks.csv"
+#| code-line-numbers: "1-6|8|10-14"
+well_data_file <- "../data/raw/well_blocks.csv" # <1>
   
 if (!file.exists(well_data_file)) {
   res <- download.file("https://media.githubusercontent.com/media/USEPA/ORD_Water_Source_2020/5e717b36419251bec97d8795a2e08308f9a7faef/outputs/Well_Estimates_2020_Blks.csv?download=true",
                        destfile=well_data_file)
 }
 
-water_sources <- read_tsv(well_data_file)
+water_sources <- read_tsv(well_data_file) # <2>
 
-city_blocks_with_water_sources <- merge(city_blocks,
+city_blocks_with_water_sources <- merge(city_blocks, # <3>
                                         water_sources,
                                         by.x = "GEOID",
                                         by.y = "GEOID_Blk",
                                         all.x = TRUE)
 ```
 
+1. Conditionally download EPA data.
+2. Load EPA data into R with the `read_tsv()` method from the `readr` package.
+3. Join Census and EPA data.
+
 ::: footer
 🔗 [GitHub - US EPA - Estimates of Domestic Water Sources in the United States (2020)](https://github.com/USEPA/ORD_Water_Source_2020)
+
+🔗 [`readr` documentation](https://readr.tidyverse.org/reference/read_delim.html)
 :::
 
 ## Assumption 3: Everyone uses public water
@@ -500,23 +568,38 @@ highest use is 98 percent, while our lowest is 9!
 
 ## Assumption 3: Everyone uses public water
 
-Now, let's map our probability data so we can see the variability and understand
-where public water use is most likely.
+Now, let's make a choropleth map of likelihood of public water use. Choropleth
+maps shade geographies by a particular value, making it easy to see how that 
+value varies across space.
+
+![Example of a choropleth map](assets/choropleth_map.webp)
+
+## Assumption 3: Everyone uses public water
 
 ```{r census_blocks_with_water_sources_map, cache=TRUE}
 #| echo: true
 #| output-location: slide
 ggplot() +
-  geom_sf(city_blocks_with_water_sources,
-          mapping = aes(geometry = geometry,
+  geom_sf(city_blocks_with_water_sources, # <1>
+          mapping = aes(geometry = geometry, # <2>
                         fill = Prob_Pub),
                         color = NA) +
-  scale_fill_distiller(palette = "OrRd", direction = 1, labels = scales::percent) +
-  labs(fill = "Probability of Public Water Use") +
+  scale_fill_distiller(palette = "OrRd", direction = 1, labels = scales::percent) + # <3>
+  labs(fill = "Probability of Public Water Use") + # <4>
   theme(axis.ticks = element_blank(),
         axis.text.x = element_blank(),
         axis.text.y = element_blank())
 ```
+
+1. Add geographic layer (map).
+2. Define an **aesthetic**, or how fill (or other map attributes) should vary based on a particular value.
+3. Generate a color scheme optimized for mapping.
+4. Add a legend title.
+
+::: footer
+🔗 [`ggplot2` - Sequential, diverging and qualitative colour scales from ColorBrewer](https://ggplot2.tidyverse.org/reference/scale_brewer.html)
+🔗 [`ggplot2`: Elegant Graphics for Data Analysis - Maps](https://ggplot2-book.org/maps.html)
+:::
 
 ## Assumption 4: The population of Lamont is evenly distributed
 
@@ -552,12 +635,19 @@ race_dots <- dots::dots_points(shp = city_blocks,
                                         value_White,
                                         value_Asian,
                                         value_TwoOrMoreRaces),
-                               divisor = 10)  %>% 
+                               divisor = 10)  %>%  # <1>
   mutate(dots_type = case_when(dots_type == "value_Hispanic" ~ "Hispanic",
                                dots_type == "value_White" ~ "White",
                                dots_type == "value_Asian" ~ "Asian",
-                               dots_type == "value_TwoOrMoreRaces" ~ "Two or More Races"))
+                               dots_type == "value_TwoOrMoreRaces" ~ "Two or More Races")) # <2>
 ```
+
+1. Create dot layer, where divisor defines how many people one dot represents.
+2. Add a new column that creates a friendly label for each group.
+
+:::footer
+🔗 [`dots` documentation](https://christophertkenny.com/dots/)
+:::
 
 ## Assumption 4: The population of Lamont is evenly distributed {auto-animate=true}
 
@@ -568,13 +658,17 @@ Next, let's make our map.
 #| output-location: slide
 ggplot() +
     geom_sf(data = city_blocks,
-          fill = "grey", color = NA) +
-  geom_sf(data = race_dots, size = 0.5, mapping = aes(color = dots_type)) +
-  scale_color_brewer(type = "qual", palette = 6) +
+          fill = "grey", color = NA) + # <1>
+  geom_sf(data = race_dots, size = 0.5, mapping = aes(color = dots_type)) + # <2>
+  scale_color_brewer(type = "qual", palette = 6) + # <3>
   theme(axis.ticks = element_blank(),
         axis.text.x = element_blank(),
         axis.text.y = element_blank())
 ```
+
+1. Use the Census blocks as a neutral base layer.
+2. Add dots, colored by the group they represent.
+3. Generate another color palette optimized for mapping.
 
 ::: notes
 Encoding population type in a color is one way to show this data, but it's
@@ -591,13 +685,16 @@ Let's use small multiples to make our map more legible.
 ggplot() +
     geom_sf(data = city_blocks,
           fill = "grey", color = NA) +
-  geom_sf(data = race_dots, size = 0.5) +
-  facet_wrap(~ dots_type) +
+  geom_sf(data = race_dots, size = 0.5) + # <1>
+  facet_wrap(~ dots_type) + # <2>
   theme(legend.position = "none",
         axis.ticks = element_blank(),
         axis.text.x = element_blank(),
         axis.text.y = element_blank())
 ```
+
+1. Remove the aesthetic we used to color our dots.
+2. Use `facet_wrap()` to tell `ggplot2` to make a new plot for each group.
 
 # Putting it all together
 
@@ -635,7 +732,7 @@ weighted by the size of each group.
 #| echo: true
 demo_summary <- city_blocks_with_water_sources %>%
   summarize(
-    prop_white = weighted.mean(Prob_Pub, w = value_White, na.rm = TRUE),
+    prop_white = weighted.mean(Prob_Pub, w = value_White, na.rm = TRUE), # <1>
     prop_asian = weighted.mean(Prob_Pub, w = value_Asian, na.rm = TRUE),
     prop_hispanic = weighted.mean(Prob_Pub, w = value_Hispanic, na.rm = TRUE),
     prop_tom = weighted.mean(Prob_Pub, w = value_TwoOrMoreRaces, na.rm = TRUE),
@@ -650,10 +747,17 @@ demo_summary <- city_blocks_with_water_sources %>%
   )
 ```
 
+1. Use the `weighted.mean()` method from the `stats` package to calculate
+weighted average.
+
 ::: notes
 This is useful when you want to understand how different groups experience or 
 are exposed to some condition, taking into account they live and how many of
 them there are.
+:::
+
+::: footer
+🔗 [`stats` documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/00Index.html)
 :::
 
 ## Putting it all together
