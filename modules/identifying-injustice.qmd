@@ -187,7 +187,7 @@ Get your Census API key.
 
 Retrieve Census data.
 
-```{r}
+```{r census_variables}
 #| echo: true
 STATE <- "CA" # <1>
 COUNTY <- "Kern" # <1>
@@ -216,7 +216,7 @@ racevars <- c( # <2>
 
 ## Who was exposed?
 
-```{r}
+```{r census_blocks, results = FALSE}
 #| echo: true
 # tidycensus::census_api_key(YOUR KEY HERE) # <1>
 
@@ -253,7 +253,7 @@ kable(long_county_blocks %>% slice(1:10))
 
 ## Who was exposed?
 
-```{r}
+```{r pivot_blocks, results = FALSE}
 #| echo: true
 county_blocks <- long_county_blocks %>% # <1>
                     pivot_wider(names_from = variable, # <1>
@@ -275,7 +275,7 @@ kable(county_blocks %>% slice(1:10))
 
 ## Who was exposed?
 
-```{r}
+```{r city_blocks, results = FALSE}
 #| echo: true
 city_boundary <- tigris::places(state = STATE, cb = TRUE) %>% # <1>
   dplyr::filter(NAME == CITY) # <1>

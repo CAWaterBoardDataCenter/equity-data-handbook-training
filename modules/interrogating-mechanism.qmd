@@ -93,8 +93,6 @@ that exceeded the state Maximum Contaminant Levels (MCL) for **arsenic** and
 **1,2,3-trichloropropane**.
 
 ::: footer
-🔗 [Water Board grants Lamont District $25.4 million to secure safe drinking water for 20,000 residents](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf)
-
 🔗 [California State Water Resources Control Board - 1,2,3,-Trichloropropane (1,2,3 - TCP) - Background](https://waterboards.ca.gov/drinking_water/certlic/drinkingwater/123TCP.html)
 :::
 
@@ -102,10 +100,14 @@ that exceeded the state Maximum Contaminant Levels (MCL) for **arsenic** and
 
 > "Technique that helps identify the fundamental reasons, or root causes, of a problem or unwanted outcome"
 
+::: fragment
+A few considerations:
+:::
+
 ::: incremental
-- Assemble team, **including community partners**
-- Allocate time
-- Honor hard truths
+- Your team should include community partners
+- Allocate enough time to be thoughtful and pursue leads
+- Honor hard truths!
 :::
 
 ::: footer
@@ -113,9 +115,9 @@ that exceeded the state Maximum Contaminant Levels (MCL) for **arsenic** and
 Analysis](https://cawaterboarddatacenter.github.io/equity-data-handbook/eval.html#root-cause-analysis)
 :::
 
-## Interrogating the problem
+## Root cause analysis
 
-![](assets/rca_template.png)
+![Methods for interrogating the problem](assets/rca_template.png)
 
 ::: footer
 📖 [Equity Data Handbook - Evaluation - Root Cause
@@ -124,11 +126,11 @@ Analysis - Process](https://cawaterboarddatacenter.github.io/equity-data-handboo
 
 ## What are the root causes of contamination and exposure to it?
 
-Take **10 minutes** to discuss the root causes of contaminated water and exposure to it. Some questions to consider include:
+Take **10 minutes** to discuss the root causes of contaminated water and exposure to it in Lamont. Some questions to consider include:
 
 - How are people exposed to the contaminated water?
 - How did contaminants get into the water?
-- What hadn't contaminants been removed from the water?
+- Why hadn't contaminants been removed from the water?
 
 Use [this press release](https://www.waterboards.ca.gov/press_room/press_releases/2023/pr021323-lamont.pdf) for extra context, if needed.
 
@@ -176,15 +178,23 @@ Resources = SAFER lever!
 
 ## Where else is the mechanism at play?
 
-SAFER has funded **15** water system consolidation projects in Kern County, where Lamont is located. That's about **16 percent** of SAFER-funded consolidations statewide. 
+SAFER has funded **15 water system consolidation projects in Kern County**, where Lamont is located. That's about **16 percent** of SAFER-funded consolidations statewide. 
 
-**Is there a common factor affecting water systems in Kern County that might also affect water systems in other counties?**
+**Is there a common factor affecting water systems in Kern County that might also affect water systems in other counties?** 
+
+🛎️ Speak up or share your ideas in the chat.
+
+::: notes
+Any of the root causes we just discussed.
+:::
+
+## Where else is the mechanism at play?
 
 Let's focus on one of the mechanisms we suspect led to contamination: **agricultural activity.** If we can identify other places where agricultural activity occurs, then we might find other places where the water is contaminated.
 
-## What data might help us understand the relationship between agriculture and water system health?
+**What data might help us understand the relationship between agriculture and water system health?** 
 
-🛎️ Chime in out loud or in the chat
+🛎️ Speak up or share your ideas in the chat.
 
 ::: notes
 - Land use
@@ -199,7 +209,8 @@ Let's focus on one of the mechanisms we suspect led to contamination: **agricult
 Why CES? 
 
 - Pesticide use is a proven vector of contamination
-- CalEnviroScreen does a lot of processing for us ❤️
+- CalEnviroScreen does a lot of pre-processing for us ❤️
+  - Say more about the steps they take
 
 ::: footer
 🔗 [Tribal Water Data Map - Layer Guide - CalEnviroScreen - Agricultural Pesticides](https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides)
@@ -234,6 +245,14 @@ ces <- read_sf(ces_shp) %>% st_transform(4326)
 🔗 [CalEnviroScreen - Download Data](https://oehha.ca.gov/calenviroscreen/download-data)
 :::
 
+## Map projections!
+
+- Want your map layers to be in the same coordinate reference system (CRS).
+- R will warn you if you try to mash up geodata that is not in the same projection.
+- Standard projection for California is [Albers California (ESPG:3310)](https://epsg.io/3310)
+
+![Examples of different map projections](assets/map_projections.jpg)
+
 ## Pesticide use
 
 2. Map pesticide use
@@ -260,6 +279,34 @@ ggplot() + pesticide_use + labs(
   title = "Agricultural Pesticide Use by Census Tract", subtitle = "Darker shade = higher percentile = more intensive pesticide use"
 ) + plotTheme
 ```
+
+## Pesticide use
+
+Let's try a version of the map that only shows counties at or above the 75th
+percentile to really emphasize heavy users.
+
+```{r filtered_ces_map}
+#| echo: true
+#| results: false
+#| output-location: slide
+top_qtl <- ces %>% filter(PesticideP >= 75)
+
+pesticide_use <- list(geom_sf(
+  top_qtl, color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP) # <1>
+), scale_fill_distiller(
+  palette = "Greens", direction = 1
+))
+  
+
+ggplot() + 
+  geom_sf(ces, color = "gray", mapping = aes()) + 
+  pesticide_use +
+  labs(
+    title = "Agricultural Pesticide Use by Census Tract - Top Quartile", subtitle = "Darker shade = higher percentile = more intensive pesticide use"
+  ) + plotTheme
+```
+
+## New slide with maps side by side
 
 ## Failing water systems
 
@@ -288,7 +335,7 @@ failing_water_systems <- geom_point(
     safer_ra %>% 
       filter(LATITUDE_MEASURE != 0) %>% 
       filter(CURRENT_FAILING == "Failing"), 
-    shape = 21, colour = "white", fill = "#9E1B07", size=3, stroke=0.5,
+    shape = 21, colour = "white", fill = "#9E1B07", size=2, stroke=0, alpha=0.5,
     mapping = aes(x = LONGITUDE_MEASURE, y = LATITUDE_MEASURE)
   )
 
@@ -297,7 +344,7 @@ ggplot() + borders("state", region = "california") + failing_water_systems + coo
 ) + plotTheme
 ```
 
-## Putting it all together
+## More pesticide use = more failing water systems?
 
 5. Overlay pesticide use with failing water systems
 
@@ -311,19 +358,67 @@ ggplot() +
     plotTheme + labs(title = "Pesticide Use and Failing Water Systems")
 ```
 
+## Accessibility is equity!
+
+Here are some tweaks we can make to better tell our story!
+
+Red/green not visible to color blind readers
+
+Link to handbook resources on color: https://cawaterboarddatacenter.github.io/equity-data-handbook/assure-analyze/vis.html#color
+
 ## Putting it all together
 
-- Aggregate water system status to tract and compare intensity of pesticide use with prevalence of failing water systems
+```{r}
+failing_systems_by_county <- safer_ra %>% 
+  mutate(County=str_to_title(COUNTY)) %>%
+  group_by(County) %>% 
+  summarise(
+    n_systems=n(), 
+    n_failing=sum(CURRENT_FAILING == "Failing", 1, 0), 
+    pct_failing = n_failing/n_systems
+  ) %>% arrange(desc(pct_failing))
+```
 
+```{r}
+pesticide_p_by_county <- ces %>% 
+  st_drop_geometry() %>% 
+  group_by(County) %>% 
+  summarise(n_tracts=n(), n_pesticide=sum(ifelse(PesticideP > 75, 1, 0)), pct_pesticide=n_pesticide/n_tracts) %>%
+  arrange(desc(pct_pesticide))
+```
+
+```{r}
+pesticide_use_and_failing_water_systems_by_county <- pesticide_p_by_county %>% left_join(failing_systems_by_county, by = "County")
+```
+  
+- Put a finer point on it than a map and a table
+- Aggregate water system status to tract and compare intensity of pesticide use with prevalence of failing water systems
+- Identify strength of relationship between treatment & outcome
+
+```{r}
+ggplot(pesticide_use_and_failing_water_systems_by_county, mapping = aes(x = pct_pesticide, y = pct_failing)) + 
+    geom_point() + geom_smooth(method=lm)
+```
+::: footer
+Link to code on GitHub - encourage people to look at GitHub
+:::
+  
 ## What should we do?
 
 - What do we have the authority to do? What cause/s can we address?
 - What interventions are already in place?
 - Determine relationship to existing interventions
 
+🛎️ Chime in or share your ideas in the chat.
+
 ::: notes
 Augment SAFER investments or fill the gaps?
+Possible breakout group.
 :::
+
+## Filling the gaps
+
+Needs a transition
 
 ## Filling the gaps
 
@@ -373,37 +468,47 @@ ces_plus_safer_ra <- st_join(ces, safer_funding_by_tract)
 
 Once you've identified your candidate water systems, repeat the original analysis with your reproducible code!
 
+:::fragment
+[R code from original module]
+:::
+
+## Putting it all together
+
+Is our analysis complete? 
+
+## Putting it all together
+
 ::: incremental
 - May find a dozen places that “look” the same as Lamont
 - Prioritize places where you see disparity
-- Interrogate the problem and intervene where the same mechanism is at play
+- Validate your hypothesis that the same mechanism is at work by engaging with
+the community, peers, etc.
 :::
 
 ## Where do we go from here?
 
 ::: incremental
-- There are lots of wrong ways, but no one right way
-- Opportunities for community engagement and partnerships
+- There are lots of wrong ways, but also lots of right ways
+- Prioritize community engagement and partnerships
   - Validate and/or sharpen findings from data analysis
   - Address mechanisms outside your remit
+  - Get at the full root cause, not just the water facets of it
 :::
 
 ::: notes
 Ok to end with oh shit, we haven't found the answer yet
 Normalize data limitations
-
-https://cawaterboarddatacenter.github.io/equity-data-handbook-training/modules/interrogating-mechanism#/further-interrogating-the-failing-water-system-in-lamont -- can you add a link to the press release to the bottom of this slide?
-Analyzing Data for Racial Equity
- 
-JK - it's on the next slide. 
- 
-Spelling error on https://cawaterboarddatacenter.github.io/equity-data-handbook-training/modules/interrogating-mechanism#/further-interrogating-the-failing-water-system-in-lamont-2
- 
-3rd bullet - "What hadn't" should be "Why hadn't"...?
-Analyzing Data for Racial Equity
- 
-
- 
-Add link to methods page?
-Analyzing Data for Racial Equity
 ::: 
+
+## Closing slide with links to: 
+
+- [GitHub](https://github.com/CAWaterBoardDataCenter/equity-data-handbook-training/)
+- [Modules](https://cawaterboarddatacenter.github.io/equity-data-handbook-training/)
+- [Handbook](https://cawaterboarddatacenter.github.io/equity-data-handbook/)
+- [EJ Roundtable Equity Data Subcommittee SharePoint](https://cawaterboards.sharepoint.com/sites/WB-OPP-EJRoundtable/SitePages/Racial-Equity-Data-Subcommittee.aspx?promotedState=0)
+  - Next meeting: July 30, 2025
+  - To join the subcommittee: [Submit this form!](https://forms.office.com/g/MgvutcbpD7)
+- [Feedback survey](https://forms.office.com/g/FKAdxAgXap)
+  - Estimated time to complete: 5 min
+
+You are not alone!
