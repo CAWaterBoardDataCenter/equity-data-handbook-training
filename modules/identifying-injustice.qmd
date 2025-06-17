@@ -216,7 +216,7 @@ racevars <- c( # <2>
 
 ## Who was exposed?
 
-```{r census_blocks, results = FALSE}
+```{r census_blocks, message = FALSE}
 #| echo: true
 # tidycensus::census_api_key(YOUR KEY HERE) # <1>
 
@@ -253,7 +253,7 @@ kable(long_county_blocks %>% slice(1:10))
 
 ## Who was exposed?
 
-```{r pivot_blocks, results = FALSE}
+```{r pivot_blocks, message = FALSE}
 #| echo: true
 county_blocks <- long_county_blocks %>% # <1>
                     pivot_wider(names_from = variable, # <1>
@@ -275,7 +275,7 @@ kable(county_blocks %>% slice(1:10))
 
 ## Who was exposed?
 
-```{r city_blocks, results = FALSE}
+```{r city_blocks, message = FALSE}
 #| echo: true
 city_boundary <- tigris::places(state = STATE, cb = TRUE) %>% # <1>
   dplyr::filter(NAME == CITY) # <1>
