@@ -332,7 +332,7 @@ What are some of the assumptions that we’ve made in this analysis, either
 explicitly or implicitly, that could pose a problem?
 
 ::: fragment
-**What do you think? Speak up or type your ideas in the chat.**
+🛎️ Chime in or share your ideas in the chat.
 :::
 
 ## Assumptions
