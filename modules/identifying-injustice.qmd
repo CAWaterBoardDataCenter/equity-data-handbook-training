@@ -498,7 +498,7 @@ PSA: The way the Census Bureau collects demographic data is changing!
 
 <iframe src="https://embed.documentcloud.org/documents/24521639/annotations/2444381/?embed=1" width="100%" height="600px" style="border: 1px solid #d8dee2; border-radius: 0.5rem;"></iframe>
 
-::: notes
+::: footer
 🔗 [U.S. Census changes how it identifies people by race and ethnicity, creates Middle Eastern category for first time](https://www.pbs.org/newshour/politics/u-s-census-changes-how-it-identifies-people-by-race-and-ethnicity-creates-middle-eastern-and-north-african-category-for-first-time)
 :::
 
