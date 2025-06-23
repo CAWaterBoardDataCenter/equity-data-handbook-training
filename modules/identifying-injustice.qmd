@@ -525,7 +525,7 @@ Lamont residents are most likely to use public water.
 ```{r water_source_data, cache=TRUE}
 #| echo: true
 #| code-line-numbers: "1-6|8|10-14"
-well_data_file <- "../data/raw/well_blocks.csv" # <1>
+well_data_file <- paste(here(), "data/raw/well_blocks.csv", sep="/") # <1>
   
 if (!file.exists(well_data_file)) {
   res <- download.file("https://media.githubusercontent.com/media/USEPA/ORD_Water_Source_2020/5e717b36419251bec97d8795a2e08308f9a7faef/outputs/Well_Estimates_2020_Blks.csv?download=true",
@@ -541,11 +541,13 @@ city_blocks_with_water_sources <- merge(city_blocks, # <3>
                                         all.x = TRUE)
 ```
 
-1. Conditionally download EPA data.
+1. Conditionally download EPA data. (Use the `here` package to form filepaths from a stable root!)
 2. Load EPA data into R with the `read_tsv()` method from the `readr` package.
 3. Join Census and EPA data.
 
 ::: footer
+🔗 [`here` documentation](https://here.r-lib.org/)
+
 🔗 [GitHub - US EPA - Estimates of Domestic Water Sources in the United States (2020)](https://github.com/USEPA/ORD_Water_Source_2020)
 
 🔗 [`readr` documentation](https://readr.tidyverse.org/reference/read_delim.html)
@@ -788,3 +790,16 @@ Use [this planning guidance from the handbook](https://cawaterboarddatacenter.gi
 📖 [Equity Data Handbook -
 Planning](https://cawaterboarddatacenter.github.io/equity-data-handbook/plan-prep/plan.html)
 :::
+
+## Resources shared during the training
+
+- [More on wide vs long data](https://www.waterboards.ca.gov/resources/oima/cowi/data_management_handbook.html#collect_process) (from the Water Boards [College of Water Informatics Data Tool Kit](https://www.waterboards.ca.gov/resources/oima/cowi/data_training.html))
+- [EJScreen Mirror Site](https://screening-tools.com/)
+  - Note that the Buffer Reports Section in the [EJScreen documentation](https://www.epa.gov/system/files/documents/2024-07/ejscreen-tech-doc-version-2-3.pdf) details how they model to transform ACS data to block level
+- Another useful data source: [GeoTracker](https://geotracker.waterboards.ca.gov/datadownload)
+- Intro to R Resources:
+  - [R for Water Resources Data Science Trainings](https://r4wrds.netlify.app/)
+  - [R Ladies Community](https://rladies.org/)
+    - Recommended Chapter Website: [Sydney, AUS](https://rladiessydney.org/)
+    - CA Chapters: [Irvine](https://www.meetup.com/rladies-irvine/), [Los Angeles](https://www.meetup.com/rladies-la/), [Pasadena](https://www.meetup.com/rladies-pasadena/), [Riverside](https://www.meetup.com/rladies-riverside/), [San Diego](https://www.meetup.com/rladies-san-diego/), [San Francisco](https://www.meetup.com/rladies-san-francisco/), [Santa Barbara](https://www.meetup.com/rladies-santa-barbara/)
+  - [Getting Started with R](https://us.sagepub.com/sites/default/files/upm-binaries/38502_Chapter1.pdf)
