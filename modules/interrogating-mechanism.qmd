@@ -20,6 +20,7 @@ library(tidycensus)
 library(sf)
 library(patchwork)
 library(dots)
+library(dplyr)
 
 tidycensus::census_api_key("ce143e4c445f1ccaed3aa214715bebcb9a487cfa")
 sf::sf_use_s2(FALSE)
@@ -182,7 +183,7 @@ SAFER has funded **15 water system consolidation projects in Kern County**, wher
 
 **Is there a common factor affecting water systems in Kern County that might also affect water systems in other counties?** 
 
-🛎️ Speak up or share your ideas in the chat.
+🛎️ Chime in or share your ideas in the chat.
 
 ::: notes
 Any of the root causes we just discussed.
@@ -194,7 +195,7 @@ Let's focus on one of the mechanisms we suspect led to contamination: **agricult
 
 **What data might help us understand the relationship between agriculture and water system health?** 
 
-🛎️ Speak up or share your ideas in the chat.
+🛎 Chime in or share your ideas in the chat.
 
 ::: notes
 - Land use
@@ -202,33 +203,87 @@ Let's focus on one of the mechanisms we suspect led to contamination: **agricult
 - Water system status (SAFER)
 :::
 
-## Pesticide use
+# Notes on mapping
 
-1. Retrieve CalEnviroScreen data
+## Map projections
 
-Why CES? 
+- Maps are flat, the earth is not
+- Projection determines how your mapping software translates the earth's curvature into a flat map
+- Different projections won't overlay cleanly
+  - A lot of software, like R, will throw an error if you ask it to operate on map layers in different projections
 
-- Pesticide use is a proven vector of contamination
-- CalEnviroScreen does a lot of pre-processing for us ❤️
-  - Say more about the steps they take
+![Examples of different map projections](assets/map_projections.jpg)
+  
+## Map projections
+
+- Projections to know
+  - [WGS84: ESPG:4326](https://epsg.io/4326) - Global lat/long
+  - [California Albers Equal Area: ESPG:3310](https://epsg.io/3310) - Statewide analysis of California
+  - California State Plane Coordinate System (SPCS) - Detailed analysis of California regions
+    - [Zone I (North): EPSG:2225](https://epsg.io/2225)
+    - [Zone II (North Central): EPSG:2226](https://epsg.io/2226)
+    - [Zone III (Central): EPSG:2227](https://epsg.io/2227)
+    - [Zone IV (South Central): EPSG:2228](https://epsg.io/2228)
+    - [Zone V (South): EPSG:2229](https://epsg.io/2229)
+    - [Zone VI (Los Angeles): EPSG:2230](https://epsg.io/2230)
+
+## Accessibility
+
+- **Accessibility is part of equity!**
+- Color blindness
+  - [ColorBrewer](https://colorbrewer2.org/)
+  - In R (`ggplot`):
+    - Discrete* scales: [Brewer color scales](https://ggplot2.tidyverse.org/reference/scale_brewer.html)
+    - Discrete and continuous scales: [Viridis color scales](https://ggplot2.tidyverse.org/reference/scale_viridis.html)
+- Vision impairment: Consider complementary text and/or data table
 
 ::: footer
-🔗 [Tribal Water Data Map - Layer Guide - CalEnviroScreen - Agricultural Pesticides](https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides)
-
-🔗 [CalEnviroScreen - Download Data](https://oehha.ca.gov/calenviroscreen/download-data)
+📖 [Equity Data Handbook - Data Visualization Design Considerations - Color](https://cawaterboarddatacenter.github.io/equity-data-handbook/assure-analyze/vis.html#color)
 :::
 
 ::: notes
-Some other potential data sources:
-- Cropland via USDA: https://croplandcros.scinet.usda.gov/
-https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides 
-- https://calpip.cdpr.ca.gov/infodocs.cfm?page=navigate#navpur 
-- https://github.com/CAWaterBoardDataCenter/tribal-water-data-map-manual/issues/7
+Discrete: Counting
+Continuous: Measuring
+:::
+
+## Storytelling
+
+| Map type | Pros ✅ | Cons  🚫| 
+| - | - | - |
+| Points | Communicates precise location | Illegible above a certain number of points | 
+| Dot density | Communicates approximate distribution | Imprecise, illegible below and above a certain number of points |
+| Choropleth | Communicates approximate distribution, able to distill large values | Difficult to layer |
+
+::: footer
+🔗 [Axis Maps - Cartography Guide](https://www.axismaps.com/guide)
 :::
 
 ## Pesticide use
 
-1. Retrieve CalEnviroScreen data
+Let's use CalEnviroScreen data to examine patterns of pesticide use across the
+state.
+
+::: fragment
+Why CES?
+:::
+
+::: incremental
+- Pesticide use is a proven vector of contamination
+- CES does a lot of pre-processing for us ❤️
+  - Filters for most hazardous and/or volatile pesticide ingredients
+  - Calculates percentiles for comparability
+  - Includes population characteristics (and other indicators!) for more detailed analysis
+:::
+
+::: footer
+📖 [Tribal Water Data Map - Layer Guide - CalEnviroScreen - Agricultural Pesticides](https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides)
+
+🔗 [CalEnviroScreen - Pesticide Use Methodology](https://oehha.ca.gov/sites/default/files/media/downloads/calenviroscreen/report/calenviroscreen40reportf2021.pdf#page=79)
+:::
+
+## Pesticide use
+
+First, let's retrieve our data from CalEnviroscreen.
 
 ```{r ces_shp}
 #| echo: true
@@ -236,28 +291,18 @@ https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guid
 #| results: false
 unzip(paste(here(), "data/raw/calenviroscreen40shpf2021shp.zip", sep="/"), exdir = "data/raw/calenviroscreen40shpf2021shp")
 ces_shp <- paste(here(), "data/raw/calenviroscreen40shpf2021shp/CES4 Final Shapefile.shp", sep="/")
-ces <- read_sf(ces_shp) %>% st_transform(4326)
+ces <- read_sf(ces_shp) %>% st_transform(3310)
 ```
 
 ::: footer
-🔗 [Tribal Water Data Map - Layer Guide - CalEnviroScreen - Agricultural Pesticides](https://cawaterboarddatacenter.github.io/tribal-water-data-map-manual/layer-guide.html#agricultural-pesticides)
-
 🔗 [CalEnviroScreen - Download Data](https://oehha.ca.gov/calenviroscreen/download-data)
 :::
 
-## Map projections!
-
-- Want your map layers to be in the same coordinate reference system (CRS).
-- R will warn you if you try to mash up geodata that is not in the same projection.
-- Standard projection for California is [Albers California (ESPG:3310)](https://epsg.io/3310)
-
-![Examples of different map projections](assets/map_projections.jpg)
-
 ## Pesticide use
 
-2. Map pesticide use
+Now, let's map pesticide use by tract.
 
-```{r ces_map}
+```{r ces_map_a}
 #| echo: true
 #| code-line-numbers: "4-6|8-10"
 #| results: false
@@ -265,19 +310,20 @@ ces <- read_sf(ces_shp) %>% st_transform(4326)
 plotTheme <- list(
   theme_void(), 
   theme(
-    plot.title = element_text(size = 14, face = "bold"), legend.position = "top", legend.direction = "horizontal"
+    plot.title = element_text(size = 14, face = "bold"), legend.position = "top", legend.direction = "horizontal",     plot.margin = margin(0, 0, 0, 0),
+    panel.spacing = unit(0, "lines")
   )
 )
 
-pesticide_use <- list(geom_sf(
+pesticide_use <- ggplot() + geom_sf(
   ces, color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP)
-), scale_fill_distiller(
+) + scale_fill_distiller(
   palette = "Greens", direction = 1
-))
-
-ggplot() + pesticide_use + labs(
+) + labs(
   title = "Agricultural Pesticide Use by Census Tract", subtitle = "Darker shade = higher percentile = more intensive pesticide use"
 ) + plotTheme
+  
+pesticide_use
 ```
 
 ## Pesticide use
@@ -285,37 +331,59 @@ ggplot() + pesticide_use + labs(
 Let's try a version of the map that only shows counties at or above the 75th
 percentile to really emphasize heavy users.
 
-```{r filtered_ces_map}
+```{r ces_map_b}
 #| echo: true
 #| results: false
 #| output-location: slide
-top_qtl <- ces %>% filter(PesticideP >= 75)
-
-pesticide_use <- list(geom_sf(
-  top_qtl, color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP) # <1>
-), scale_fill_distiller(
+top_pesticide_use <- ggplot() + 
+  geom_sf(ces, color = "lightgray", mapping = aes()) + 
+  geom_sf(
+  ces %>% filter(PesticideP >= 75), color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP)
+) + scale_fill_distiller(
   palette = "Greens", direction = 1
-))
-  
-
-ggplot() + 
-  geom_sf(ces, color = "gray", mapping = aes()) + 
-  pesticide_use +
+) +
   labs(
-    title = "Agricultural Pesticide Use by Census Tract - Top Quartile", subtitle = "Darker shade = higher percentile = more intensive pesticide use"
+    title = "Agricultural Pesticide Use by Census Tract - Top 25%", subtitle = "Darker shade = higher percentile = more intensive pesticide use"
   ) + plotTheme
+  
+top_pesticide_use
 ```
 
-## New slide with maps side by side
+## Pesticide use
+
+::: columns
+::: {.column width="50%"}
+```{r cma}
+#| crop: true
+#| fig.width: 8
+#| fig.height: 10
+#| out.width: "100%"
+pesticide_use
+```
+:::
+
+::: {.column width="50%"}
+```{r cmb}
+#| crop: true
+#| fig.width: 8
+#| fig.height: 10
+#| out.width: "100%"
+top_pesticide_use
+```
+:::
+:::
 
 ## Failing water systems
 
-3. Retrieve SAFER data
+Now, let's take a look at SAFER data.
 
 ```{r safer_csv}
 #| echo: true
-#| results: false
 safer_ra <- read_csv(paste(here(), "data/raw/SAFER_RA.csv", sep="/"))
+safer_ra_as_sf <- st_as_sf(
+  safer_ra %>% filter(LATITUDE_MEASURE != 0, LONGITUDE_MEASURE != 0), 
+  coords=c("LONGITUDE_MEASURE", "LATITUDE_MEASURE"), crs=4326
+) %>% st_transform(3310)
 ```
 
 ::: footer
@@ -324,83 +392,130 @@ safer_ra <- read_csv(paste(here(), "data/raw/SAFER_RA.csv", sep="/"))
 
 ## Failing water systems
 
-4. Map failing water systems
+Plot the location of failing water systems on a map.
 
-```{r safer_map}
+```{r safer_point_map}
 #| echo: true
 #| code-line-numbers: "1-5|7-9"
 #| results: false
 #| output-location: slide
-failing_water_systems <- geom_point(
-    safer_ra %>% 
-      filter(LATITUDE_MEASURE != 0) %>% 
-      filter(CURRENT_FAILING == "Failing"), 
-    shape = 21, colour = "white", fill = "#9E1B07", size=2, stroke=0, alpha=0.5,
-    mapping = aes(x = LONGITUDE_MEASURE, y = LATITUDE_MEASURE)
-  )
-
-ggplot() + borders("state", region = "california") + failing_water_systems + coord_quickmap() + labs(
-  title = "Failing Water Systems", subtitle = "Status determined by 2024 SAFER Risk Analysis"
-) + plotTheme
+safer_point_map <- ggplot() + 
+  geom_sf(ces, color = "lightgray", mapping = aes()) + 
+  geom_sf(safer_ra_as_sf %>% filter(CURRENT_FAILING == 'Failing'), colour = "darkred", alpha = 0.5, mapping = aes()) + 
+  labs(title = "Failing Water Systems", subtitle = "Status determined by 2024 SAFER Risk Analysis") + 
+  plotTheme
+  
+safer_point_map
 ```
 
 ## More pesticide use = more failing water systems?
 
-5. Overlay pesticide use with failing water systems
+Let's overlay failing systems with pesticide use to see if we can identify a
+relationship.
 
 ```{r ces_safer_map}
 #| echo: true
 #| results: false
 #| output-location: slide
 ggplot() +
-    pesticide_use +
-    failing_water_systems + 
-    plotTheme + labs(title = "Pesticide Use and Failing Water Systems")
+  geom_sf(ces, color = "lightgray", mapping = aes()) +
+    geom_sf(
+  ces %>% filter(PesticideP >= 75), color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP)
+) + scale_fill_distiller(
+  palette = "Blues", direction = 1
+) +
+    geom_sf(safer_ra_as_sf %>% filter(CURRENT_FAILING == 'Failing'), colour = "darkorange", alpha = 0.5, mapping = aes()) + 
+    labs(title = "Pesticide Use and Failing Water Systems") +
+    plotTheme 
 ```
 
-## Accessibility is equity!
+## More pesticide use = more failing water systems?
 
-Here are some tweaks we can make to better tell our story!
+We can see a relationship, but how strong is it? Let's do a quick statistical
+analysis to see whether there's a significant relationship between pesticide
+use and failing water systems.
 
-Red/green not visible to color blind readers
+First, we need to aggregate the SAFER data by tract.
 
-Link to handbook resources on color: https://cawaterboarddatacenter.github.io/equity-data-handbook/assure-analyze/vis.html#color
-
-## Putting it all together
-
-```{r}
-failing_systems_by_county <- safer_ra %>% 
-  mutate(County=str_to_title(COUNTY)) %>%
-  group_by(County) %>% 
-  summarise(
-    n_systems=n(), 
-    n_failing=sum(CURRENT_FAILING == "Failing", 1, 0), 
-    pct_failing = n_failing/n_systems
-  ) %>% arrange(desc(pct_failing))
-```
-
-```{r}
-pesticide_p_by_county <- ces %>% 
-  st_drop_geometry() %>% 
-  group_by(County) %>% 
-  summarise(n_tracts=n(), n_pesticide=sum(ifelse(PesticideP > 75, 1, 0)), pct_pesticide=n_pesticide/n_tracts) %>%
-  arrange(desc(pct_pesticide))
-```
-
-```{r}
-pesticide_use_and_failing_water_systems_by_county <- pesticide_p_by_county %>% left_join(failing_systems_by_county, by = "County")
-```
+```{r tract_summary}
+#| echo: TRUE
+systems_with_tracts <- st_join(safer_ra_as_sf, ces)
   
-- Put a finer point on it than a map and a table
-- Aggregate water system status to tract and compare intensity of pesticide use with prevalence of failing water systems
-- Identify strength of relationship between treatment & outcome
-
-```{r}
-ggplot(pesticide_use_and_failing_water_systems_by_county, mapping = aes(x = pct_pesticide, y = pct_failing)) + 
-    geom_point() + geom_smooth(method=lm)
+failing_systems_by_tract <- systems_with_tracts %>% 
+  group_by(Tract) %>% 
+  summarize(n_systems = n(), n_failing = sum(CURRENT_FAILING == 'Failing', na.rm = TRUE), pct_failing = n_failing / n_systems * 100)
+  
+tracts_with_failing_systems <- st_join(ces, failing_systems_by_tract)
 ```
+
+## More pesticide use = more failing water systems?
+
+Next, we'll perform the analysis. Curious how we got here? Check out the code
+on GitHub!
+
+```{r analysis_correlation}
+clean_data <- tracts_with_failing_systems %>% 
+  filter(!is.na(PesticideP) & !is.na(pct_failing))
+  
+correlation <- cor(clean_data$PesticideP, clean_data$pct_failing)
+if (abs(correlation) >= 0.7) {
+  strength <- "strong"
+} else if (abs(correlation) >= 0.4) {
+  strength <- "moderate"
+} else if (abs(correlation) >= 0.2) {
+  strength <- "weak"
+} else {
+  strength <- "very weak/negligible"
+}
+direction <- ifelse(correlation > 0, "positive", "negative")
+```
+
+```{r analysis_linear_regression}
+model <- lm(pct_failing ~ PesticideP, data = clean_data)
+r_squared <- summary(model)$r.squared
+p_value <- summary(model)$coefficients[2, 4]
+
+if (p_value < 0.001) {
+  pSignificance <- "highly significant ***"
+} else if (p_value < 0.01) {
+  pSignificance <- "very significant **"
+} else if (p_value < 0.05) {
+  pSignificance <- "significant *"
+} else {
+  pSignificance <- "not statistically significant"
+}
+```
+
+```{r analysis_scatter_plot}
+scatter_plot <- ggplot(clean_data, aes(x = PesticideP, y = pct_failing)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "darkorange", linetype = "dashed") +
+  labs(
+    title = "Pesticide Use vs Failing Water Systems",
+    subtitle = sprintf("r = %.3f, R² = %.3f", correlation, r_squared),
+    x = "Pesticide Use Percentile",
+    y = "Failing Water Systems Proportion"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+```
+
+::: columns
+::: {.column width="33%"}
+- **Relationship strength:** `r strength` `r direction`
+- **R-squared:** `r r_squared`
+- **P-value:** `r p_value` (`r pSignificance`)
+:::
+
+::: {.column width="67%"}
+```{r}
+scatter_plot
+```
+:::
+:::
+
 ::: footer
-Link to code on GitHub - encourage people to look at GitHub
+🔗 [Link to code on GitHub](#)
 :::
   
 ## What should we do?
@@ -413,43 +528,42 @@ Link to code on GitHub - encourage people to look at GitHub
 
 ::: notes
 Augment SAFER investments or fill the gaps?
-Possible breakout group.
 :::
 
 ## Filling the gaps
 
-Needs a transition
+Let's target areas that have pesticide use and failing water systems but have
+not received SAFER funding.
 
-## Filling the gaps
-
-Aggregate SAFER funding by tract.
+First, we need to aggregate our funding to the tract level.
 
 ```{r safer_funding_by_tract}
 #| echo: true
 #| code-line-numbers: 1-2|3-5|6|7-10
-ca_tracts <- tigris::tracts(state = "CA", year=2024) %>% st_transform(4326)
-safer_ra_sf <- st_as_sf(safer_ra %>% filter(LONGITUDE_MEASURE != 0), coords=c("LONGITUDE_MEASURE", "LATITUDE_MEASURE"), crs=4326)
-safer_tracts <- st_join(ca_tracts, safer_ra_sf)
-safer_funding_by_tract <- safer_tracts %>% group_by(GEOID) %>% 
-replace_na(list(FUNDING_RECEIVED_SINCE_2017=0)) %>% summarise(funding_received=sum(FUNDING_RECEIVED_SINCE_2017) / 1000000)
+safer_funding_by_tract <- systems_with_tracts %>% 
+  group_by(Tract) %>% 
+  replace_na(list(FUNDING_RECEIVED_SINCE_2017=0)) %>% 
+  summarise(funding_received=sum(FUNDING_RECEIVED_SINCE_2017) / 1000000) %>% 
+  st_join(failing_systems_by_tract) %>% 
+  st_join(ces)
 ```
 
 ## Filling the gaps
 
-Highlight tracts receiving SAFER funding.
+Now, let's filter for tracts in the top half of pesticide use with failing water
+systems that have received no SAFER funding.
 
-```{r combined_map}
+```{r unfunded_tracts}
 #| echo: true
-#| code-line-numbers: 1-3|5-6
-#| output-location: slide
-funding_received <- geom_sf(data = safer_funding_by_tract %>% filter(funding_received > 0), linewidth = 0.5, alpha = 0, color = "black")
-
-ggplot() +
-    pesticide_use +
-    funding_received +
-    failing_water_systems + 
-    plotTheme + labs(title = "Pesticide Use and Failing Water Systems", subtitle = "Tracts with one or more water system receiving funding from SAFER outlined in black")
+unfunded_at_risk_tracts <- safer_funding_by_tract %>% 
+  select(Tract, ApproxLoc, TotPop19, PesticideP, n_failing, pct_failing, funding_received) %>% 
+  filter(pct_failing > 0, funding_received == 0, PesticideP >= 50) %>% 
+  arrange(desc(TotPop19))
 ```
+
+## Filling the gaps
+
+`r kable(head(unfunded_at_risk_tracts, n = 5))`
 
 ::: notes
 - Maybe you're not in SAFER... but you can use that to understand where support exists...
@@ -458,25 +572,21 @@ ggplot() +
 
 ## Filling the gaps
 
-Identify water systems receiving little/no SAFER funding in tracts with high pesticide use.
+Finally, let's map those tracts
 
 ```{r, evaluate = FALSE}
-ces_plus_safer_ra <- st_join(ces, safer_funding_by_tract)
+#| echo: TRUE
+ggplot() +
+  geom_sf(ces, color = "lightgray", mapping = aes()) +
+  geom_sf(ces %>% st_filter(unfunded_at_risk_tracts), mapping = aes(fill = PesticideP)) +
+  scale_fill_distiller(
+    palette = "Greens", direction = 1
+  ) + plotTheme
 ```
 
 ## Putting it all together
 
 Once you've identified your candidate water systems, repeat the original analysis with your reproducible code!
-
-:::fragment
-[R code from original module]
-:::
-
-## Putting it all together
-
-Is our analysis complete? 
-
-## Putting it all together
 
 ::: incremental
 - May find a dozen places that “look” the same as Lamont
@@ -487,20 +597,24 @@ the community, peers, etc.
 
 ## Where do we go from here?
 
+Is our analysis complete? What are we missing? What assumptions are we making?
+What would you do next?
+
+🛎️ Chime in or share your ideas in the chat.
+
+## Where do we go from here?
+
 ::: incremental
 - There are lots of wrong ways, but also lots of right ways
 - Prioritize community engagement and partnerships
   - Validate and/or sharpen findings from data analysis
   - Address mechanisms outside your remit
-  - Get at the full root cause, not just the water facets of it
+  - Get at the full root cause, not just the water-shaped parts of it
 :::
 
-::: notes
-Ok to end with oh shit, we haven't found the answer yet
-Normalize data limitations
-::: 
+## Additional resources
 
-## Closing slide with links to: 
+You are not alone!
 
 - [GitHub](https://github.com/CAWaterBoardDataCenter/equity-data-handbook-training/)
 - [Modules](https://cawaterboarddatacenter.github.io/equity-data-handbook-training/)
@@ -510,5 +624,3 @@ Normalize data limitations
   - To join the subcommittee: [Submit this form!](https://forms.office.com/g/MgvutcbpD7)
 - [Feedback survey](https://forms.office.com/g/FKAdxAgXap)
   - Estimated time to complete: 5 min
-
-You are not alone!
