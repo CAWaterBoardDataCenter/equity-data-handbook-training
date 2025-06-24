@@ -556,11 +556,11 @@ scatter_plot
 :::
 
 ::: fragment
-Curious how we got here? Check out the code on GitHub!
+Curious how we got here? Check out the code [on GitHub](https://github.com/CAWaterBoardDataCenter/equity-data-handbook-training/blob/d9e8ec28647e75b4926910959dbf2a2733deeba8/modules/interrogating-mechanism.qmd#L493)!
 :::
 
 ::: footer
-🔗 [Link to code on GitHub](#)
+🔗 [GitHub - Equity Data Handbook Training - Analysis Code](https://github.com/CAWaterBoardDataCenter/equity-data-handbook-training/blob/d9e8ec28647e75b4926910959dbf2a2733deeba8/modules/interrogating-mechanism.qmd#L493)
 :::
 
 ::: notes
