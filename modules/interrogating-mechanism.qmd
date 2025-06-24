@@ -6,6 +6,7 @@ format:
     smaller: true
     scrollable: true
     code-copy: true
+    css: "assets/styles.css"
 editor: 
   markdown: 
     wrap: 72
@@ -14,13 +15,9 @@ editor:
 ```{r packages, echo = FALSE}
 library(here)
 library(ggplot2)
-library(ggnewscale)
-library(tidyverse)
-library(tidycensus)
-library(sf)
-library(patchwork)
-library(dots)
 library(dplyr)
+library(tidyverse)
+library(sf)
 
 tidycensus::census_api_key("ce143e4c445f1ccaed3aa214715bebcb9a487cfa")
 sf::sf_use_s2(FALSE)
@@ -203,9 +200,7 @@ Let's focus on one of the mechanisms we suspect led to contamination: **agricult
 - Water system status (SAFER)
 :::
 
-# Notes on mapping
-
-## Map projections
+## Mapping notes: Projections
 
 - Maps are flat, the earth is not
 - Projection determines how your mapping software translates the earth's curvature into a flat map
@@ -214,7 +209,7 @@ Let's focus on one of the mechanisms we suspect led to contamination: **agricult
 
 ![Examples of different map projections](assets/map_projections.jpg)
   
-## Map projections
+## Mapping notes: Projections
 
 - Projections to know
   - [WGS84: ESPG:4326](https://epsg.io/4326) - Global lat/long
@@ -227,7 +222,7 @@ Let's focus on one of the mechanisms we suspect led to contamination: **agricult
     - [Zone V (South): EPSG:2229](https://epsg.io/2229)
     - [Zone VI (Los Angeles): EPSG:2230](https://epsg.io/2230)
 
-## Accessibility
+## Mapping notes: Accessibility
 
 - **Accessibility is part of equity!**
 - Color blindness
@@ -246,7 +241,7 @@ Discrete: Counting
 Continuous: Measuring
 :::
 
-## Storytelling
+## Mapping notes: Storytelling
 
 | Map type | Pros ✅ | Cons  🚫| 
 | - | - | - |
@@ -289,10 +284,13 @@ First, let's retrieve our data from CalEnviroscreen.
 #| echo: true
 #| code-line-numbers: "1-4|5-6"
 #| results: false
-unzip(paste(here(), "data/raw/calenviroscreen40shpf2021shp.zip", sep="/"), exdir = "data/raw/calenviroscreen40shpf2021shp")
+unzip(paste(here(), "data/raw/calenviroscreen40shpf2021shp.zip", sep="/"), exdir = "data/raw/calenviroscreen40shpf2021shp") # <1>
 ces_shp <- paste(here(), "data/raw/calenviroscreen40shpf2021shp/CES4 Final Shapefile.shp", sep="/")
-ces <- read_sf(ces_shp) %>% st_transform(3310)
+ces <- read_sf(ces_shp) %>% st_transform(3310) # <2>
 ```
+
+1. Extract data from ZIP archive
+2. Read shapefile into R, using the Albers California projection
 
 ::: footer
 🔗 [CalEnviroScreen - Download Data](https://oehha.ca.gov/calenviroscreen/download-data)
@@ -304,27 +302,31 @@ Now, let's map pesticide use by tract.
 
 ```{r ces_map_a}
 #| echo: true
-#| code-line-numbers: "4-6|8-10"
 #| results: false
+#| code-line-numbers: "1-7|8-14"
 #| output-location: slide
 plotTheme <- list(
   theme_void(), 
   theme(
-    plot.title = element_text(size = 14, face = "bold"), legend.position = "top", legend.direction = "horizontal",     plot.margin = margin(0, 0, 0, 0),
-    panel.spacing = unit(0, "lines")
+    plot.title = element_text(size = 14, face = "bold")
   )
-)
+) # <1>
 
-pesticide_use <- ggplot() + geom_sf(
+pesticide_use <- ggplot() + geom_sf( # <2>
   ces, color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP)
 ) + scale_fill_distiller(
-  palette = "Greens", direction = 1
+  palette = "Greens", direction = 1 # <3>
 ) + labs(
-  title = "Agricultural Pesticide Use by Census Tract", subtitle = "Darker shade = higher percentile = more intensive pesticide use"
+  title = "Agricultural Pesticide Use by Census Tract", subtitle = "Darker shade = higher percentile = more intensive pesticide use" # <4>
 ) + plotTheme
   
 pesticide_use
 ```
+
+1. Set some attractive default styles for our maps
+2. Add tracts shaded by pesticide use percentile
+3. Generate a legible color scale from ColorBrewer
+4. Add a title and subtitle
 
 ## Pesticide use
 
@@ -334,11 +336,12 @@ percentile to really emphasize heavy users.
 ```{r ces_map_b}
 #| echo: true
 #| results: false
+#| code-line-numbers: "3|"
 #| output-location: slide
 top_pesticide_use <- ggplot() + 
   geom_sf(ces, color = "lightgray", mapping = aes()) + 
   geom_sf(
-  ces %>% filter(PesticideP >= 75), color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP)
+  ces %>% filter(PesticideP >= 75), color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP) # <1>
 ) + scale_fill_distiller(
   palette = "Greens", direction = 1
 ) +
@@ -348,6 +351,8 @@ top_pesticide_use <- ggplot() +
   
 top_pesticide_use
 ```
+
+1. Filter data to only include tracts with pesticide use >= 75th percentile
 
 ## Pesticide use
 
@@ -379,12 +384,14 @@ Now, let's take a look at SAFER data.
 
 ```{r safer_csv}
 #| echo: true
+#| code-line-numbers: "1|2-5"
 safer_ra <- read_csv(paste(here(), "data/raw/SAFER_RA.csv", sep="/"))
 safer_ra_as_sf <- st_as_sf(
   safer_ra %>% filter(LATITUDE_MEASURE != 0, LONGITUDE_MEASURE != 0), 
   coords=c("LONGITUDE_MEASURE", "LATITUDE_MEASURE"), crs=4326
-) %>% st_transform(3310)
+) %>% st_transform(3310) # <1>
 ```
+1. Create geospatial version of SAFER data in Albers California projection
 
 ::: footer
 🔗 [Drinking Water Risk Assessment - California State Water Resource Control Boards - Division of Drinking Water](https://data.ca.gov/dataset/safer-failing-and-at-risk-drinking-water-systems)
@@ -396,17 +403,20 @@ Plot the location of failing water systems on a map.
 
 ```{r safer_point_map}
 #| echo: true
-#| code-line-numbers: "1-5|7-9"
+#| code-line-numbers: "2|3|"
 #| results: false
 #| output-location: slide
 safer_point_map <- ggplot() + 
-  geom_sf(ces, color = "lightgray", mapping = aes()) + 
-  geom_sf(safer_ra_as_sf %>% filter(CURRENT_FAILING == 'Failing'), colour = "darkred", alpha = 0.5, mapping = aes()) + 
+  geom_sf(ces, color = "lightgray", mapping = aes()) + # <1> 
+  geom_sf(safer_ra_as_sf %>% filter(CURRENT_FAILING == 'Failing'), colour = "darkred", alpha = 0.5, mapping = aes()) + # <2>
   labs(title = "Failing Water Systems", subtitle = "Status determined by 2024 SAFER Risk Analysis") + 
   plotTheme
   
 safer_point_map
 ```
+
+1. Add a tract base map
+2. Add a point layer showing failing water systems
 
 ## More pesticide use = more failing water systems?
 
@@ -415,6 +425,27 @@ relationship.
 
 ```{r ces_safer_map}
 #| echo: true
+#| results: false
+#| output-location: slide
+ggplot() +
+  geom_sf(ces, color = "lightgray", mapping = aes()) +
+    geom_sf(
+  ces %>% filter(PesticideP >= 75), color = "white", linewidth = 0.001, mapping = aes(fill = PesticideP)
+) + scale_fill_distiller(
+  palette = "Greens", direction = 1
+) +
+    geom_sf(safer_ra_as_sf %>% filter(CURRENT_FAILING == 'Failing'), colour = "darkred", alpha = 0.5, mapping = aes()) + 
+    labs(title = "Pesticide Use and Failing Water Systems") +
+    plotTheme 
+```
+
+## More pesticide use = more failing water systems?
+
+Yikes! Let's make a version that's color blind friendly.
+
+```{r ces_safer_map_b}
+#| echo: true
+#| code-line-numbers: "4,6|"
 #| results: false
 #| output-location: slide
 ggplot() +
@@ -438,20 +469,26 @@ use and failing water systems.
 First, we need to aggregate the SAFER data by tract.
 
 ```{r tract_summary}
+#| code-line-numbers: "1|3-7|9"
 #| echo: TRUE
-systems_with_tracts <- st_join(safer_ra_as_sf, ces)
+systems_with_tracts <- st_join(safer_ra_as_sf, ces) # <1>
   
 failing_systems_by_tract <- systems_with_tracts %>% 
   group_by(Tract) %>% 
-  summarize(n_systems = n(), n_failing = sum(CURRENT_FAILING == 'Failing', na.rm = TRUE), pct_failing = n_failing / n_systems * 100)
+  summarize(n_systems = n(), n_failing = sum(CURRENT_FAILING == 'Failing', na.rm = TRUE), pct_failing = n_failing / n_systems * 100) # <2>
   
-tracts_with_failing_systems <- st_join(ces, failing_systems_by_tract)
+tracts_with_failing_systems <- st_join(ces, failing_systems_by_tract) # <3>
 ```
+
+1. Perform geospatial join of water systems and tracts with CES data
+2. Summarize number of systems, number of failing systems, and proportion systems
+failing by tract.
+3. Join summary data to tracts with CES, so that we can use both CES data and
+summary values for analysis.
 
 ## More pesticide use = more failing water systems?
 
-Next, we'll perform the analysis. Curious how we got here? Check out the code
-on GitHub!
+Next, we'll perform the analysis.
 
 ```{r analysis_correlation}
 clean_data <- tracts_with_failing_systems %>% 
@@ -500,22 +537,36 @@ scatter_plot <- ggplot(clean_data, aes(x = PesticideP, y = pct_failing)) +
   theme(plot.title = element_text(size = 14, face = "bold"))
 ```
 
+::: fragment
 ::: columns
-::: {.column width="33%"}
-- **Relationship strength:** `r strength` `r direction`
-- **R-squared:** `r r_squared`
-- **P-value:** `r p_value` (`r pSignificance`)
+::: {.column .fs-small width="40%"}
+| Measure | Definition | Result |
+| - | - | -: |
+| **Correlation** | Strength of relationship (0-1) | `r correlation`<br />(`r strength` `r direction`) |
+| **R-squared** | How much outcome affected by factor (0-1) | `r r_squared` (`r r_squared * 100`%) |
+| **P-value** | Likelihood of false positive (0-1) | `r p_value`<br />(`r pSignificance`) |
 :::
 
-::: {.column width="67%"}
+::: {.column width="60%"}
 ```{r}
 scatter_plot
 ```
 :::
 :::
+:::
+
+::: fragment
+Curious how we got here? Check out the code on GitHub!
+:::
 
 ::: footer
 🔗 [Link to code on GitHub](#)
+:::
+
+::: notes
+"The p-value tells you the probability that you'd see this strong of a relationship (or stronger) if there was actually no real connection between pesticide use and water system failures - so your tiny p-value means it's extremely unlikely this is just a coincidence."
+
+Areas with higher pesticide use tend to have slightly more failing water systems, and while this relationship is statistically significant, it's pretty weak. Pesticide use explains only about 5% of the variation in water system failures (R-squared), suggesting that other factors like infrastructure age, funding, and geography play much larger roles.
 :::
   
 ## What should we do?
@@ -532,57 +583,70 @@ Augment SAFER investments or fill the gaps?
 
 ## Filling the gaps
 
-Let's target areas that have pesticide use and failing water systems but have
-not received SAFER funding.
-
-First, we need to aggregate our funding to the tract level.
-
-```{r safer_funding_by_tract}
-#| echo: true
-#| code-line-numbers: 1-2|3-5|6|7-10
-safer_funding_by_tract <- systems_with_tracts %>% 
-  group_by(Tract) %>% 
-  replace_na(list(FUNDING_RECEIVED_SINCE_2017=0)) %>% 
-  summarise(funding_received=sum(FUNDING_RECEIVED_SINCE_2017) / 1000000) %>% 
-  st_join(failing_systems_by_tract) %>% 
-  st_join(ces)
-```
-
-## Filling the gaps
-
-Now, let's filter for tracts in the top half of pesticide use with failing water
-systems that have received no SAFER funding.
+Let's target water systems in tracts with high pesticide use that have not
+received SAFER funding.
 
 ```{r unfunded_tracts}
+#| code-line-numbers: "2|3|4|"
 #| echo: true
-unfunded_at_risk_tracts <- safer_funding_by_tract %>% 
-  select(Tract, ApproxLoc, TotPop19, PesticideP, n_failing, pct_failing, funding_received) %>% 
-  filter(pct_failing > 0, funding_received == 0, PesticideP >= 50) %>% 
-  arrange(desc(TotPop19))
+unfunded_failing_systems <- systems_with_tracts %>% 
+  filter(CURRENT_FAILING == 'Failing', FUNDING_RECEIVED_SINCE_2017 == 0, PesticideP >= 50) %>% # <1>
+  select(WATER_SYSTEM_NUMBER, PL_ADDRESS_CITY_NAME, POPULATION, SERVICE_CONNECTIONS, FUNDING_RECEIVED_SINCE_2017, SERVICE_AREA_ECONOMIC_STATUS, PesticideP) %>% # <2>
+  arrange(desc(POPULATION)) # <3>
 ```
 
-## Filling the gaps
-
-`r kable(head(unfunded_at_risk_tracts, n = 5))`
-
-::: notes
-- Maybe you're not in SAFER... but you can use that to understand where support exists...
-- Maybe you are in SAFER, evaluate use of resources
-:::
+1. Apply filters
+2. Retrieve subset of columns
+3. Sort by highest population first
 
 ## Filling the gaps
 
-Finally, let's map those tracts
+`r kable(head(unfunded_failing_systems, n = 5))`
 
-```{r, evaluate = FALSE}
-#| echo: TRUE
+## Filling the gaps
+
+Finally, let's create a bubble map of those failing water systems, where the
+point is scaled to the population served.
+
+```{r bubble_map, evaluate = FALSE}
+#| code-line-numbers: "1|3|4-10|5|9|16,21|17,22|"
+#| echo: true
+#| output-location: slide
+BREAKS = c(0, 1000, 2500, 5000, 10000, 20000) # <1>
 ggplot() +
-  geom_sf(ces, color = "lightgray", mapping = aes()) +
-  geom_sf(ces %>% st_filter(unfunded_at_risk_tracts), mapping = aes(fill = PesticideP)) +
-  scale_fill_distiller(
-    palette = "Greens", direction = 1
-  ) + plotTheme
+  geom_sf(ces %>% st_transform(4326), color = "lightgray", mapping = aes()) + # <2>
+  geom_point(
+    unfunded_failing_systems %>% inner_join(safer_ra, by = "WATER_SYSTEM_NUMBER") %>% filter(LATITUDE_MEASURE != 0) %>% arrange(POPULATION.x), # <3>
+    alpha = 0.75,
+    shape = 21,
+    stroke = 0,
+    mapping = aes(size = POPULATION.x, fill = POPULATION.x, x = LONGITUDE_MEASURE, y = LATITUDE_MEASURE), # <4>
+  ) + # <5>
+  scale_fill_fermenter(
+    type = "seq", 
+    palette = "YlGnBu", 
+    breaks = BREAKS, # <6>
+    direction = 1,
+    name = "Population",
+    guide = guide_legend(override.aes = list(alpha = 1, stroke = 0.5, color = "black")) # <7>
+  ) +
+  scale_size_binned(
+    breaks = BREAKS, # <6>
+    name = "Population",
+    guide = guide_legend(override.aes = list(alpha = 1, stroke = 0.5, color = "black")) # <7>
+  ) + 
+    labs(title = "Unfunded Failing Water Systems\nin Tracts with High Pesticide Use", subtitle = "Systems scaled and colored by population served") +
+    plotTheme
 ```
+
+1. Define custom breaks to better show variation
+2. Re-project the tract base map to 4326, since we will be mapping lat/lon
+3. Join failing system data to original SAFER data to retrieve lat/lon
+4. Scale and color points by population
+5. Use `geom_point()` instead of `geom_sf()`, because the latter doesn't behave
+correctly with the size aesthetic.
+6. Pass custom breaks into our color and scale functions
+7. Specify that color/size should be shown on the same legend
 
 ## Putting it all together
 
