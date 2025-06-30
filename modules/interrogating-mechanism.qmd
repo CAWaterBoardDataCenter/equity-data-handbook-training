@@ -14,9 +14,11 @@ editor:
 
 ```{r packages, echo = FALSE}
 library(here)
-library(ggplot2)
 library(dplyr)
 library(tidyverse)
+library(purrr)
+library(tidycensus)
+library(ggplot2)
 library(sf)
 
 tidycensus::census_api_key("ce143e4c445f1ccaed3aa214715bebcb9a487cfa")
@@ -591,7 +593,7 @@ received SAFER funding.
 #| echo: true
 unfunded_failing_systems <- systems_with_tracts %>% 
   filter(CURRENT_FAILING == 'Failing', FUNDING_RECEIVED_SINCE_2017 == 0, PesticideP >= 50) %>% # <1>
-  select(WATER_SYSTEM_NUMBER, PL_ADDRESS_CITY_NAME, POPULATION, SERVICE_CONNECTIONS, FUNDING_RECEIVED_SINCE_2017, SERVICE_AREA_ECONOMIC_STATUS, PesticideP) %>% # <2>
+  select(WATER_SYSTEM_NUMBER, PL_ADDRESS_CITY_NAME, COUNTY, POPULATION, SERVICE_CONNECTIONS, FUNDING_RECEIVED_SINCE_2017, SERVICE_AREA_ECONOMIC_STATUS, PesticideP) %>% # <2>
   arrange(desc(POPULATION)) # <3>
 ```
 
@@ -652,8 +654,158 @@ correctly with the size aesthetic.
 
 Once you've identified your candidate water systems, repeat the original analysis with your reproducible code!
 
+Scroll to read the complete example using R functions and view results.
+
+```{r functions}
+#| echo: TRUE
+retrieve_census_data <- function(state, county, city) {
+racevars <- c(
+White = "P2_005N",
+Black = "P2_006N",
+AmericanIndian = "P2_007N",
+Asian = "P2_008N",
+HawaiianPacificIslander = "P2_009N",
+Other = "P2_010N",
+TwoOrMoreRaces = "P2_011N",
+Hispanic = "P2_002N"
+)
+
+long_blocks <- get_decennial(
+year = 2020,
+sumfile = "pl",
+state = state,
+county = county,
+geography = "block",
+variables = racevars,
+summary_var = "P2_001N",
+geometry = TRUE,
+cache = TRUE
+) %>%
+mutate(percent = 100 * (value / summary_value))
+
+county_blocks <- long_blocks %>%
+pivot_wider(names_from = variable,
+values_from = c(value, percent))
+
+city_boundary <- tigris::places(state = state) %>%
+dplyr::filter(NAME == city)
+
+return(st_filter(county_blocks, city_boundary))
+}
+
+join_epa_data <- function(data) {
+well_data_file <- paste(here(), "data/raw/well_blocks.csv", sep = "/")
+
+if (!file.exists(well_data_file)) {
+res <- download.file(
+"https://media.githubusercontent.com/media/USEPA/ORD_Water_Source_2020/5e717b36419251bec97d8795a2e08308f9a7faef/outputs/Well_Estimates_2020_Blks.csv?download=true",
+destfile = well_data_file
+)
+}
+
+water_sources <- read_tsv(well_data_file)
+
+return(merge(
+data,
+water_sources,
+by.x = "GEOID",
+by.y = "GEOID_Blk",
+all.x = TRUE
+))
+}
+
+summarize_public_water_usage <- function(data) {
+summary_ <- data %>%
+summarize(
+count_white = sum(value_White, na.rm = TRUE),
+count_black = sum(value_Black, na.rm = TRUE),
+count_asian = sum(value_Asian, na.rm = TRUE),
+count_hispanic = sum(value_Hispanic, na.rm = TRUE),
+count_amind = sum(value_AmericanIndian, na.rm = TRUE),
+count_hpi = sum(value_HawaiianPacificIslander, na.rm = TRUE),
+count_oth = sum(value_Other, na.rm = TRUE),
+count_tom = sum(value_TwoOrMoreRaces, na.rm = TRUE),
+pp_white = sum(Prob_Pub * value_White, na.rm = TRUE),
+pp_black = sum(Prob_Pub * value_Black, na.rm = TRUE),
+pp_asian = sum(Prob_Pub * value_Asian, na.rm = TRUE),
+pp_hispanic = sum(Prob_Pub * value_Hispanic, na.rm = TRUE),
+pp_amind = sum(Prob_Pub * value_AmericanIndian, na.rm = TRUE),
+pp_hpi = sum(Prob_Pub * value_HawaiianPacificIslander, na.rm = TRUE),
+pp_hpi = sum(Prob_Pub * value_Other, na.rm = TRUE),
+pp_tom = sum(Prob_Pub * value_TwoOrMoreRaces, na.rm = TRUE),
+prop_white = weighted.mean(Prob_Pub, w = value_White, na.rm = TRUE),
+prop_black = weighted.mean(Prob_Pub, w = value_Black, na.rm = TRUE),
+prop_asian = weighted.mean(Prob_Pub, w = value_Asian, na.rm = TRUE),
+prop_hispanic = weighted.mean(Prob_Pub, w = value_Hispanic, na.rm = TRUE),
+prop_amind = weighted.mean(Prob_Pub, w = value_AmericanIndian, na.rm = TRUE),
+prop_hpi = weighted.mean(Prob_Pub, w = value_HawaiianPacificIslander, na.rm = TRUE),
+prop_oth = weighted.mean(Prob_Pub, w = value_Other, na.rm = TRUE),
+prop_tom = weighted.mean(Prob_Pub, w = value_TwoOrMoreRaces, na.rm = TRUE),
+)
+
+formatted_summary <- summary_ %>% st_drop_geometry() %>% pivot_longer(
+    cols = matches("^(count|pp|prop)_(white|black|asian|hispanic|amind|hpi|oth|tom)$"),
+    names_to = c(".value", "group"),
+    names_pattern = "^(count|pp|prop)_(white|black|asian|hispanic|amind|hpi|oth|tom)$"
+) %>% rename(n = count, n_public_water = pp, pct_public_water = prop) %>% arrange(desc(pct_public_water))
+
+return(formatted_summary)
+}
+```
+
+```{r loop, output = 'asis'}
+#| echo: TRUE
+head(unfunded_failing_systems, n = 5) %>% 
+  st_drop_geometry() %>% 
+  select(PL_ADDRESS_CITY_NAME, COUNTY) %>%
+  rename(county = COUNTY, city = PL_ADDRESS_CITY_NAME) %>%
+  pwalk(function(county, city) {
+    cat("\n\n**Public Water Use In ", str_to_title(city), "(", str_to_title(county), " County)**\n\n")
+    
+    # Step 1: Retrieve census data
+    place_blocks <- tryCatch({
+      retrieve_census_data("CA", str_to_title(county), str_to_title(city))
+    }, error = function(e) {
+      message("❌ Failed to retrieve census data for ", city, ", ", county, ": ", e$message)
+      return(NULL)
+    })
+    
+    if (is.null(place_blocks) || nrow(place_blocks) == 0) {
+      message("⚠️ No census data for ", city, ", ", county, ". Skipping.\n")
+      return(NULL)
+    }
+
+    # Step 2: Join EPA data
+    place_blocks_with_p_public_water <- tryCatch({
+      join_epa_data(place_blocks)
+    }, error = function(e) {
+      message("❌ Failed to join EPA data for ", city, ", ", county, ": ", e$message)
+      return(NULL)
+    })
+    
+    if (is.null(place_blocks_with_p_public_water) || nrow(place_blocks_with_p_public_water) == 0) {
+      message("⚠️ No matched EPA data for ", city, ", ", county, ". Skipping.\n")
+      return(NULL)
+    }
+
+    # Step 3: Summarize and print
+    place_demographic_summary <- tryCatch({
+      summarize_public_water_usage(place_blocks_with_p_public_water)
+    }, error = function(e) {
+      message("❌ Failed to summarize data for ", city, ", ", county, ": ", e$message)
+      return(NULL)
+    })
+    
+    if (!is.null(place_demographic_summary)) {
+      print(kable(place_demographic_summary))
+    }
+  })
+```
+
+## Putting it all together
+
 ::: incremental
-- May find a dozen places that “look” the same as Lamont
+- You might find a dozen places that “look” the same as Lamont
 - Prioritize places where you see disparity
 - Validate your hypothesis that the same mechanism is at work by engaging with
 the community, peers, etc.
@@ -688,3 +840,11 @@ You are not alone!
   - To join the subcommittee: [Submit this form!](https://forms.office.com/g/MgvutcbpD7)
 - [Feedback survey](https://forms.office.com/g/FKAdxAgXap)
   - Estimated time to complete: 5 min
+
+
+## Resources shared during the training
+
+- See [this section](https://cawaterboarddatacenter.github.io/equity-data-handbook/assure-analyze/vis.html#maps)
+of the Equity Data Handbook for more things to consider when selecting a map 
+projection for your work
+- More documentation on the [Tidyverse](https://www.tidyverse.org/)
